@@ -41,6 +41,13 @@
       "type": "string",
       "description": "Optional notes from the reviewer"
     },
+    "selected_sections": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Sections selected for this review"
+    },
     "status": {
       "type": "string",
       "enum": [
@@ -58,7 +65,10 @@
     "coverage_summary": {
       "type": "string"
     },
-    "liability_summary": {
+    "coverage_issues": {
+      "type": "string"
+    },
+    "liability_assessment": {
       "type": "string"
     },
     "damages_summary": {
@@ -70,7 +80,10 @@
     "litigation_status": {
       "type": "string"
     },
-    "settlement_posture": {
+    "venue_exposure_analysis": {
+      "type": "string"
+    },
+    "settlement_evaluation": {
       "type": "string"
     },
     "red_flags": {
@@ -81,6 +94,24 @@
     },
     "recommended_next_steps": {
       "type": "string"
+    },
+    "supervisor_review": {
+      "type": "string"
+    },
+    "venue_risk_level": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Moderate",
+        "High",
+        "Severe",
+        "Unknown"
+      ],
+      "description": "Venue risk level extracted from venue analysis"
+    },
+    "liability_allocation_summary": {
+      "type": "string",
+      "description": "Short summary of liability allocation percentages"
     },
     "confidence_level": {
       "type": "string",

@@ -167,6 +167,16 @@ export default function SavedReviews() {
                       {review.claim_name}
                     </p>
                     <StatusBadge status={review.status} />
+                    {review.venue_risk_level && review.venue_risk_level !== "Unknown" && (
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+                        review.venue_risk_level === "Severe" ? "bg-red-50 text-red-700 border-red-200" :
+                        review.venue_risk_level === "High" ? "bg-orange-50 text-orange-700 border-orange-200" :
+                        review.venue_risk_level === "Moderate" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
+                        "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      }`}>
+                        Venue: {review.venue_risk_level}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                     <span className="text-xs text-muted-foreground">{review.claim_number}</span>
@@ -183,6 +193,11 @@ export default function SavedReviews() {
                       </>
                     )}
                   </div>
+                  {review.liability_allocation_summary && (
+                    <p className="text-xs text-muted-foreground mt-1 italic">
+                      Liability: {review.liability_allocation_summary}
+                    </p>
+                  )}
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
                   <Link to={`/review/${review.id}`}>

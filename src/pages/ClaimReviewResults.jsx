@@ -4,44 +4,42 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  ArrowLeft,
-  FileText,
-  Shield,
-  Scale,
-  DollarSign,
-  Stethoscope,
-  Gavel,
-  Handshake,
-  AlertTriangle,
-  HelpCircle,
-  ListChecks,
-  Copy,
-  Download,
-  Archive,
-  Loader2,
-  CalendarDays,
-  MapPin,
-  Briefcase,
-  Hash,
+  ArrowLeft, FileText, Shield, Scale, DollarSign, Stethoscope,
+  Gavel, TrendingUp, AlertTriangle, HelpCircle, ListChecks,
+  Copy, Download, Archive, Loader2, CalendarDays, MapPin,
+  Briefcase, Hash, ClipboardList, UserCheck, BarChart2,
 } from "lucide-react";
 import ReviewSection from "@/components/claims/ReviewSection";
 import StatusBadge from "@/components/claims/StatusBadge";
 import ConfidenceBadge from "@/components/claims/ConfidenceBadge";
+import ReviewBadges from "@/components/claims/ReviewBadges";
+import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const sections = [
+const ALL_SECTION_DEFS = [
   { key: "executive_summary", title: "Executive Summary", icon: FileText, accent: "bg-primary" },
   { key: "coverage_summary", title: "Coverage Summary", icon: Shield, accent: "bg-blue-600" },
-  { key: "liability_summary", title: "Liability Summary", icon: Scale, accent: "bg-indigo-600" },
+  { key: "coverage_issues", title: "Coverage Issues", icon: Shield, accent: "bg-amber-600" },
+  { key: "liability_assessment", title: "Liability Assessment", icon: Scale, accent: "bg-indigo-600" },
   { key: "damages_summary", title: "Damages Summary", icon: DollarSign, accent: "bg-emerald-600" },
   { key: "medical_treatment_summary", title: "Medical Treatment Summary", icon: Stethoscope, accent: "bg-teal-600" },
   { key: "litigation_status", title: "Litigation Status", icon: Gavel, accent: "bg-purple-600" },
-  { key: "settlement_posture", title: "Settlement Posture", icon: Handshake, accent: "bg-sky-600" },
+  { key: "venue_exposure_analysis", title: "Venue Exposure Analysis", icon: BarChart2, accent: "bg-sky-600" },
+  { key: "settlement_evaluation", title: "Settlement Evaluation", icon: TrendingUp, accent: "bg-green-600" },
   { key: "red_flags", title: "Red Flags", icon: AlertTriangle, accent: "bg-red-600" },
-  { key: "missing_information", title: "Missing Information", icon: HelpCircle, accent: "bg-amber-600" },
-  { key: "recommended_next_steps", title: "Recommended Next Steps", icon: ListChecks, accent: "bg-green-600" },
+  { key: "missing_information", title: "Missing Information", icon: HelpCircle, accent: "bg-rose-500" },
+  { key: "recommended_next_steps", title: "Recommended Next Steps", icon: ListChecks, accent: "bg-lime-600" },
+  { key: "supervisor_review", title: "Supervisor Review", icon: UserCheck, accent: "bg-violet-700" },
 ];
+
+const VENUE_RISK_COLORS = {
+  Low: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  Moderate: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  High: "bg-orange-50 text-orange-700 border-orange-200",
+  Severe: "bg-red-50 text-red-700 border-red-200",
+  Unknown: "bg-slate-100 text-slate-600 border-slate-200",
+};
 
 export default function ClaimReviewResults() {
   const { id } = useParams();
@@ -64,27 +62,24 @@ export default function ClaimReviewResults() {
     },
   });
 
+  const getActiveSections = () => {
+    if (!review) return [];
+    const selected = review.selected_sections;
+    if (selected && selected.length > 0) {
+      return ALL_SECTION_DEFS.filter((s) => selected.includes(s.key) && review[s.key]);
+    }
+    // Fallback for old reviews without selected_sections
+    return ALL_SECTION_DEFS.filter((s) => review[s.key]);
+  };
+
   const copyToClipboard = () => {
     if (!review) return;
+    const sections = getActiveSections();
     const text = sections
-      .map((s) => {
-        const content = review[s.key];
-        return content ? `## ${s.title}\n${content}` : null;
-      })
-      .filter(Boolean)
+      .map((s) => `## ${s.title}\n${review[s.key]}`)
       .join("\n\n");
 
-    const header = `CLAIM REVIEW REPORT
-Claim: ${review.claim_name}
-Claim #: ${review.claim_number}
-Date of Loss: ${review.date_of_loss}
-Jurisdiction: ${review.jurisdiction}
-Line of Business: ${review.line_of_business}
-Confidence Level: ${review.confidence_level || "N/A"}
-Generated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : "N/A"}
-${"=".repeat(60)}
-
-`;
+    const header = `CLAIM REVIEW REPORT\nClaim: ${review.claim_name}\nClaim #: ${review.claim_number}\nDate of Loss: ${review.date_of_loss}\nJurisdiction: ${review.jurisdiction}\nLine of Business: ${review.line_of_business}\nConfidence Level: ${review.confidence_level || "N/A"}\nVenue Risk: ${review.venue_risk_level || "N/A"}\nLiability: ${review.liability_allocation_summary || "N/A"}\nGenerated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : "N/A"}\n${"=".repeat(60)}\n\n`;
 
     navigator.clipboard.writeText(header + text);
     toast.success("Copied to clipboard", { description: "Full review text has been copied." });
@@ -92,29 +87,12 @@ ${"=".repeat(60)}
 
   const exportReport = () => {
     if (!review) return;
+    const sections = getActiveSections();
     const text = sections
-      .map((s) => {
-        const content = review[s.key];
-        return content ? `${"=".repeat(60)}\n${s.title.toUpperCase()}\n${"=".repeat(60)}\n\n${content}\n` : null;
-      })
-      .filter(Boolean)
+      .map((s) => `${"=".repeat(60)}\n${s.title.toUpperCase()}\n${"=".repeat(60)}\n\n${review[s.key]}\n`)
       .join("\n");
 
-    const header = `${"=".repeat(60)}
-CLAIM REVIEW REPORT
-${"=".repeat(60)}
-
-Claim Name: ${review.claim_name}
-Claim Number: ${review.claim_number}
-Date of Loss: ${review.date_of_loss}
-Jurisdiction: ${review.jurisdiction}
-Line of Business: ${review.line_of_business}
-Confidence Level: ${review.confidence_level || "N/A"}
-Report Generated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy 'at' h:mm a") : "N/A"}
-
-DISCLAIMER: This report is generated by an AI assistant for educational and portfolio purposes only. It is not legal advice and should not be used for actual claims handling decisions.
-
-`;
+    const header = `${"=".repeat(60)}\nCLAIM REVIEW REPORT\n${"=".repeat(60)}\n\nClaim Name: ${review.claim_name}\nClaim Number: ${review.claim_number}\nDate of Loss: ${review.date_of_loss}\nJurisdiction: ${review.jurisdiction}\nLine of Business: ${review.line_of_business}\nConfidence Level: ${review.confidence_level || "N/A"}\nVenue Risk Level: ${review.venue_risk_level || "N/A"}\nLiability Allocation: ${review.liability_allocation_summary || "N/A"}\nReport Generated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy 'at' h:mm a") : "N/A"}\n\nDISCLAIMER: This report is generated by an AI assistant for educational and portfolio purposes only. It is not legal advice and should not be used for actual claims handling decisions.\n\n`;
 
     const blob = new Blob([header + text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -142,6 +120,8 @@ DISCLAIMER: This report is generated by an AI assistant for educational and port
       </div>
     );
   }
+
+  const activeSections = getActiveSections();
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
@@ -176,27 +156,43 @@ DISCLAIMER: This report is generated by an AI assistant for educational and port
 
       {/* Action Bar */}
       <Card className="shadow-sm">
-        <CardContent className="p-4 flex items-center justify-between flex-wrap gap-3">
-          <ConfidenceBadge level={review.confidence_level} />
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={copyToClipboard}>
-              <Copy className="w-3.5 h-3.5 mr-1.5" />Copy
-            </Button>
-            <Button variant="outline" size="sm" onClick={exportReport}>
-              <Download className="w-3.5 h-3.5 mr-1.5" />Export
-            </Button>
-            {review.status !== "archived" && (
-              <Button variant="outline" size="sm" onClick={() => archiveMutation.mutate()} disabled={archiveMutation.isPending}>
-                <Archive className="w-3.5 h-3.5 mr-1.5" />Archive
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
+              <ConfidenceBadge level={review.confidence_level} />
+              {review.venue_risk_level && (
+                <Badge variant="outline" className={`text-xs font-medium ${VENUE_RISK_COLORS[review.venue_risk_level] || VENUE_RISK_COLORS.Unknown}`}>
+                  Venue: {review.venue_risk_level}
+                </Badge>
+              )}
+              {review.liability_allocation_summary && (
+                <Badge variant="outline" className="text-xs font-medium bg-indigo-50 text-indigo-700 border-indigo-200">
+                  <Scale className="w-3 h-3 mr-1" />
+                  {review.liability_allocation_summary}
+                </Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={copyToClipboard}>
+                <Copy className="w-3.5 h-3.5 mr-1.5" />Copy
               </Button>
-            )}
+              <Button variant="outline" size="sm" onClick={exportReport}>
+                <Download className="w-3.5 h-3.5 mr-1.5" />Export
+              </Button>
+              {review.status !== "archived" && (
+                <Button variant="outline" size="sm" onClick={() => archiveMutation.mutate()} disabled={archiveMutation.isPending}>
+                  <Archive className="w-3.5 h-3.5 mr-1.5" />Archive
+                </Button>
+              )}
+            </div>
           </div>
+          <ReviewBadges review={review} />
         </CardContent>
       </Card>
 
-      {/* Review Sections */}
+      {/* Review Sections — only show selected/populated sections */}
       <div className="space-y-4">
-        {sections.map((s) => (
+        {activeSections.map((s) => (
           <ReviewSection
             key={s.key}
             title={s.title}
@@ -223,7 +219,7 @@ DISCLAIMER: This report is generated by an AI assistant for educational and port
       <div className="text-center py-6 border-t">
         <p className="text-[11px] text-muted-foreground max-w-lg mx-auto leading-relaxed">
           This report was generated by an AI assistant and is for educational and portfolio purposes only.
-          It does not constitute legal advice. All analysis is based on the claim file text provided.
+          It does not constitute legal advice. All analysis is based solely on the claim file text provided.
         </p>
       </div>
     </div>
