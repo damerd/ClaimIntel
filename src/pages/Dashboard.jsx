@@ -27,14 +27,14 @@ export default function Dashboard() {
   const recent = reviews.slice(0, 5);
 
   const stats = [
-    { label: "Total Reviews", value: reviews.length, icon: FileText, color: "bg-primary/10 text-primary" },
-    { label: "Completed", value: reviewed, icon: FileCheck, color: "bg-emerald-50 text-emerald-600" },
-    { label: "Drafts", value: drafts, icon: Clock, color: "bg-amber-50 text-amber-600" },
+    { label: "Total Reviews", value: reviews.length, icon: FileText, color: "bg-primary/10 text-primary", link: null },
+    { label: "Completed", value: reviewed, icon: FileCheck, color: "bg-emerald-50 text-emerald-600", link: "/saved-reviews?status=reviewed" },
+    { label: "Drafts", value: drafts, icon: Clock, color: "bg-amber-50 text-amber-600", link: "/saved-reviews?status=draft" },
     { label: "This Month", value: reviews.filter(r => {
       const d = new Date(r.created_date);
       const now = new Date();
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    }).length, icon: TrendingUp, color: "bg-blue-50 text-blue-600" },
+    }).length, icon: TrendingUp, color: "bg-blue-50 text-blue-600", link: "/saved-reviews?status=reviewed&month=current" },
   ];
 
   return (
@@ -61,21 +61,24 @@ export default function Dashboard() {
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="shadow-sm">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-2xl font-bold mt-1">{isLoading ? "—" : stat.value}</p>
+        {stats.map((stat) => {
+          const card = (
+            <Card key={stat.label} className={`shadow-sm ${stat.link ? "cursor-pointer hover:shadow-md hover:border-primary/30 transition-all" : ""}`}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+                    <p className="text-2xl font-bold mt-1">{isLoading ? "—" : stat.value}</p>
+                  </div>
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
+                    <stat.icon className="w-5 h-5" />
+                  </div>
                 </div>
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
-                  <stat.icon className="w-5 h-5" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+          return stat.link ? <Link key={stat.label} to={stat.link}>{card}</Link> : card;
+        })}
       </div>
 
       {/* Recent Reviews */}

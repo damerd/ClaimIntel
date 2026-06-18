@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/claims/StatusBadge";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +33,19 @@ import { toast } from "sonner";
 export default function SavedReviews() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [monthFilter, setMonthFilter] = useState("all");
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const month = searchParams.get("month");
+    if (status) setStatusFilter(status);
+    if (month === "current") {
+      const now = new Date();
+      setMonthFilter(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+    }
+  }, []);
 
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["claimReviews"],
@@ -53,8 +66,26 @@ export default function SavedReviews() {
       r.claim_name?.toLowerCase().includes(search.toLowerCase()) ||
       r.claim_number?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesMonth = monthFilter === "all" || (() => {
+      if (!r.created_date) return false;
+      const d = new Date(r.created_date);
+      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      return ym === monthFilter;
+    })();
+    return matchesSearch && matchesStatus && matchesMonth;
   });
+
+  // Build a list of unique year-month options from reviewed reviews
+  const monthOptions = Array.from(
+    new Set(
+      reviews
+        .filter((r) => r.status === "reviewed" && r.created_date)
+        .map((r) => {
+          const d = new Date(r.created_date);
+          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        })
+    )
+  ).sort().reverse();
 
   return (
     <div className="space-y-6">
@@ -75,9 +106,9 @@ export default function SavedReviews() {
               className="pl-9"
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setMonthFilter("all"); }}>
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
@@ -88,6 +119,21 @@ export default function SavedReviews() {
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
+            {statusFilter === "reviewed" && monthOptions.length > 0 && (
+              <Select value={monthFilter} onValueChange={setMonthFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Months" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Months</SelectItem>
+                  {monthOptions.map((ym) => {
+                    const [year, month] = ym.split("-");
+                    const label = new Date(Number(year), Number(month) - 1).toLocaleString("default", { month: "long", year: "numeric" });
+                    return <SelectItem key={ym} value={ym}>{label}</SelectItem>;
+                  })}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
