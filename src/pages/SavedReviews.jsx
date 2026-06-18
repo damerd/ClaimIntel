@@ -27,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export default function SavedReviews() {
   const [search, setSearch] = useState("");
@@ -43,7 +43,7 @@ export default function SavedReviews() {
     mutationFn: (id) => base44.entities.ClaimReview.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
-      toast({ title: "Review deleted" });
+      toast.success("Review deleted");
     },
   });
 

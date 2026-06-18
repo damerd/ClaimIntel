@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, FileText, Sparkles, ArrowLeft, Upload } from "lucide-react";
 import DisclaimerBanner from "@/components/claims/DisclaimerBanner";
 import { SAMPLE_CLAIM } from "@/lib/sampleClaim";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const LINES_OF_BUSINESS = [
   "Commercial Auto",
@@ -57,7 +57,7 @@ export default function NewClaimReview() {
       claim_file_text: SAMPLE_CLAIM.claim_file_text,
       reviewer_notes: SAMPLE_CLAIM.reviewer_notes,
     });
-    toast({ title: "Sample data loaded", description: "Fictional commercial auto BI claim loaded." });
+    toast.success("Sample data loaded", { description: "Fictional commercial auto BI claim loaded." });
   };
 
   const handleFileUpload = (e) => {
@@ -145,7 +145,7 @@ Produce a JSON response with these exact keys:
       navigate(`/review/${id}`);
     },
     onError: () => {
-      toast({ title: "Analysis failed", description: "Please try again.", variant: "destructive" });
+      toast.error("Analysis failed", { description: "Please try again." });
     },
   });
 
