@@ -56,7 +56,7 @@ export default function SavedReviews() {
     mutationFn: (id) => base44.entities.ClaimReview.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
-      toast.success("Review deleted");
+      toast.success("Report deleted");
     },
   });
 
@@ -90,8 +90,8 @@ export default function SavedReviews() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Saved Reviews</h1>
-        <p className="text-sm text-muted-foreground mt-1">Browse and manage all claim reviews</p>
+        <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Claims Intelligence Reports</h1>
+        <p className="text-sm text-muted-foreground mt-1">Browse, search, and manage ClaimIntel analyses and claim intelligence reports.</p>
       </div>
 
       {/* Filters */}
@@ -146,13 +146,13 @@ export default function SavedReviews() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <FolderOpen className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-          <p className="text-muted-foreground font-medium">No reviews found</p>
+          <p className="text-muted-foreground font-medium">No reports found</p>
           <p className="text-sm text-muted-foreground mt-1">
-            {reviews.length === 0 ? "Create your first claim review to get started." : "Try adjusting your filters."}
+            {reviews.length === 0 ? "Run your first ClaimIntel analysis to get started." : "Try adjusting your filters."}
           </p>
           {reviews.length === 0 && (
             <Link to="/new-review">
-              <Button className="mt-4">Create Review</Button>
+              <Button className="mt-4">Run Analysis</Button>
             </Link>
           )}
         </div>

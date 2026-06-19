@@ -33,8 +33,8 @@ export default function AppLayout() {
               <Shield className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-heading text-lg font-bold tracking-tight">ClaimReview</h1>
-              <p className="text-[11px] text-white/50 tracking-wide uppercase">AI Assistant</p>
+              <h1 className="font-heading text-lg font-bold tracking-tight">ClaimIntel</h1>
+              <p className="text-[11px] text-white/50 leading-tight">Smarter Claims Analysis.<br />Better Decisions.</p>
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function AppLayout() {
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
             <Shield className="w-4 h-4 text-primary" />
           </div>
-          <h1 className="font-heading text-base font-bold">ClaimReview</h1>
+          <h1 className="font-heading text-base font-bold">ClaimIntel</h1>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)} className="text-white hover:bg-white/10">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

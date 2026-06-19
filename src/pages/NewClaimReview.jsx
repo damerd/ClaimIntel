@@ -221,7 +221,7 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
       return review.id;
     },
     onSuccess: (id) => navigate(`/review/${id}`),
-    onError: () => toast.error("Analysis failed", { description: "Please try again." }),
+    onError: () => toast.error("Analysis failed", { description: "ClaimIntel could not complete the analysis. Please try again." }),
   });
 
   const isValid = form.claim_name && form.claim_number && form.date_of_loss && form.jurisdiction && form.line_of_business && form.claim_file_text && selectedSections.length > 0;
@@ -233,8 +233,8 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div>
-          <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">New Claim Review</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Enter claim details and file text for AI analysis</p>
+          <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">New Claims Intelligence Analysis</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Upload claim documents and enter details for AI-powered analysis</p>
         </div>
       </div>
 
@@ -323,7 +323,7 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
           {analyzeAndSave.isPending ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing Claim...</>
           ) : (
-            <><Sparkles className="w-4 h-4 mr-2" />Analyze & Generate Review</>
+            <><Sparkles className="w-4 h-4 mr-2" />Generate Intelligence Report</>
           )}
         </Button>
       </div>

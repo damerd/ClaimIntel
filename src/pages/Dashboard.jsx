@@ -46,13 +46,13 @@ export default function Dashboard() {
             Claims Dashboard
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">
-            AI-powered claim file analysis and review generation
+            AI-powered claims intelligence platform for liability, coverage, venue, and settlement analysis.
           </p>
         </div>
         <Link to="/new-review">
           <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
             <FilePlus className="w-4 h-4 mr-2" />
-            New Claim Review
+            New Analysis
           </Button>
         </Link>
       </div>
@@ -84,7 +84,7 @@ export default function Dashboard() {
       {/* Recent Reviews */}
       <Card className="shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <CardTitle className="text-lg font-semibold">Recent Reviews</CardTitle>
+          <CardTitle className="text-lg font-semibold">Recent Intelligence Reports</CardTitle>
           <Link to="/saved-reviews">
             <Button variant="ghost" size="sm" className="text-muted-foreground">
               View All <ArrowRight className="w-4 h-4 ml-1" />
@@ -101,10 +101,10 @@ export default function Dashboard() {
           ) : recent.length === 0 ? (
             <div className="text-center py-12">
               <FolderOpen className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">No reviews yet</p>
+              <p className="text-muted-foreground text-sm">No analyses yet</p>
               <Link to="/new-review">
                 <Button variant="outline" size="sm" className="mt-3">
-                  Create Your First Review
+                  Run Your First Analysis
                 </Button>
               </Link>
             </div>

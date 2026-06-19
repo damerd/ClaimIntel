@@ -7,7 +7,7 @@ export default function SettingsDisclaimer() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
         <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Settings & Disclaimer</h1>
-        <p className="text-sm text-muted-foreground mt-1">Important information about this application</p>
+        <p className="text-sm text-muted-foreground mt-1">Important information about ClaimIntel</p>
       </div>
 
       {/* Main Disclaimer */}
@@ -35,10 +35,10 @@ export default function SettingsDisclaimer() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            ClaimReview AI Assistant is a prototype application designed to demonstrate how AI can assist insurance claims professionals in reviewing claim file information and generating structured claim summaries.
+            ClaimIntel is an AI-powered claims intelligence platform designed to help adjusters, analysts, supervisors, risk managers, and claims leaders transform claim files into actionable intelligence.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            The application uses AI to analyze claim file text provided by the user and produces a structured review covering coverage, liability, damages, medical treatment, litigation status, settlement posture, and more.
+            The platform analyzes claim documentation and generates structured evaluations covering coverage, liability allocation, damages, medical treatment, venue exposure, litigation posture, settlement considerations, and supervisor-level recommendations.
           </p>
         </CardContent>
       </Card>
@@ -125,7 +125,9 @@ export default function SettingsDisclaimer() {
       <Separator />
 
       <div className="text-center pb-8">
-        <p className="text-xs text-muted-foreground">ClaimReview AI Assistant — Portfolio Prototype</p>
+        <p className="text-xs text-muted-foreground font-medium">ClaimIntel © 2026</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Smarter Claims Analysis. Better Decisions.</p>
+        <p className="text-xs text-muted-foreground mt-0.5">Educational & Portfolio Prototype</p>
       </div>
     </div>
   );
