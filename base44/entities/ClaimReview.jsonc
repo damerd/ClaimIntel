@@ -121,6 +121,10 @@
         "Low"
       ],
       "description": "AI confidence level in the review"
+    },
+    "follow_up_messages": {
+      "type": "string",
+      "description": "JSON-serialized array of follow-up conversation messages"
     }
   },
   "required": [

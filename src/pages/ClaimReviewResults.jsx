@@ -13,6 +13,7 @@ import ReviewSection from "@/components/claims/ReviewSection";
 import StatusBadge from "@/components/claims/StatusBadge";
 import ConfidenceBadge from "@/components/claims/ConfidenceBadge";
 import ReviewBadges from "@/components/claims/ReviewBadges";
+import FollowUpAssistant from "@/components/claims/FollowUpAssistant";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -213,6 +214,11 @@ export default function ClaimReviewResults() {
             <p className="text-sm text-muted-foreground italic">{review.reviewer_notes}</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Follow-Up Assistant — always present on completed reports */}
+      {(review.status === "reviewed" || review.status === "archived") && (
+        <FollowUpAssistant review={review} />
       )}
 
       {/* Disclaimer */}
