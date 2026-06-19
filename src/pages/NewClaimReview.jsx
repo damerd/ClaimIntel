@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, FileText, Sparkles, ArrowLeft, Upload } from "lucide-react";
+import { Loader2, FileText, Sparkles, ArrowLeft } from "lucide-react";
 import DisclaimerBanner from "@/components/claims/DisclaimerBanner";
-import SectionSelector, { DEFAULT_SECTIONS, ALL_SECTIONS } from "@/components/claims/SectionSelector";
+import SectionSelector, { DEFAULT_SECTIONS } from "@/components/claims/SectionSelector";
+import DocumentUploader from "@/components/claims/DocumentUploader";
 import { SAMPLE_CLAIM } from "@/lib/sampleClaim";
 import { toast } from "sonner";
 
@@ -115,6 +116,7 @@ export default function NewClaimReview() {
     jurisdiction: "", line_of_business: "", claim_file_text: "", reviewer_notes: "",
   });
   const [selectedSections, setSelectedSections] = useState(DEFAULT_SECTIONS);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]);
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
@@ -131,14 +133,6 @@ export default function NewClaimReview() {
     toast.success("Sample data loaded", { description: "Fictional commercial auto BI claim loaded." });
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => updateField("claim_file_text", ev.target.result);
-    reader.readAsText(file);
-  };
-
   const analyzeAndSave = useMutation({
     mutationFn: async () => {
       const review = await base44.entities.ClaimReview.create({
@@ -152,7 +146,13 @@ export default function NewClaimReview() {
         .filter(Boolean)
         .join("\n\n");
 
-      const prompt = `You are a professional insurance claims review assistant. Analyze the following claim file and produce a structured claim review.
+      const docCount = uploadedDocuments.filter((d) => d.status === "processed").length;
+      const docSummaryLines = uploadedDocuments
+        .filter((d) => d.status === "processed")
+        .map((d) => `- ${d.name} (${d.documentType || d.mimeType})`)
+        .join("\n");
+
+      const prompt = `You are a professional insurance claims review assistant. Analyze the following claim file package and produce a structured claim review.
 
 IMPORTANT RULES:
 - Only use facts found in the claim file text provided below. Do NOT invent facts.
@@ -162,6 +162,9 @@ IMPORTANT RULES:
 - Use professional insurance claims language throughout.
 - Reference "Based on claim file text provided" where appropriate.
 - Preserve all formatting instructions in section prompts exactly.
+- Use information from ALL uploaded documents. Do NOT duplicate information found in multiple documents.
+- Flag any conflicting information between documents.
+- Identify missing records that would normally be expected in a claim file of this type.
 
 CLAIM DETAILS:
 Claim Name: ${form.claim_name}
@@ -170,6 +173,8 @@ Date of Loss: ${form.date_of_loss}
 Jurisdiction: ${form.jurisdiction}
 Line of Business: ${form.line_of_business}
 ${form.reviewer_notes ? `Reviewer Notes: ${form.reviewer_notes}` : ""}
+
+${docCount > 0 ? `DOCUMENTS INCLUDED IN THIS PACKAGE (${docCount} document${docCount > 1 ? "s" : ""}):\n${docSummaryLines}` : ""}
 
 CLAIM FILE TEXT:
 ${form.claim_file_text}
@@ -283,33 +288,11 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         </CardContent>
       </Card>
 
-      {/* Claim File */}
-      <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">Claim File Text</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Label htmlFor="file-upload" className="cursor-pointer">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-muted/50 transition-colors">
-                <Upload className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Upload .txt file</span>
-              </div>
-            </Label>
-            <input id="file-upload" type="file" accept=".txt" className="hidden" onChange={handleFileUpload} />
-            <span className="text-xs text-muted-foreground">or paste text below</span>
-          </div>
-          <Textarea
-            value={form.claim_file_text}
-            onChange={(e) => updateField("claim_file_text", e.target.value)}
-            placeholder="Paste the full claim file text here..."
-            className="min-h-[250px] font-mono text-xs leading-relaxed"
-          />
-          {form.claim_file_text && (
-            <p className="text-xs text-muted-foreground">{form.claim_file_text.length.toLocaleString()} characters</p>
-          )}
-        </CardContent>
-      </Card>
+      {/* Document Uploader */}
+      <DocumentUploader
+        onTextChange={(text) => updateField("claim_file_text", text)}
+        onDocumentsChange={setUploadedDocuments}
+      />
 
       {/* Section Selector */}
       <SectionSelector selected={selectedSections} onChange={setSelectedSections} />
