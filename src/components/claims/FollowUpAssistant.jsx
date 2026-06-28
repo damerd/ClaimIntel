@@ -234,7 +234,7 @@ USER QUESTION: ${question}`;
             disabled={isLoading}
             className="flex-1" />
           
-          <Button type="submit" disabled={!input.trim() || isLoading} size="icon" className="shrink-0 text-[#1b2cc0]">
+          <Button type="submit" disabled={!input.trim() || isLoading} size="icon" className="shrink-0 text-[#1b2cc0] bg-[#cdc6c6]">
             <Send className="w-4 h-4" />
           </Button>
         </form>
