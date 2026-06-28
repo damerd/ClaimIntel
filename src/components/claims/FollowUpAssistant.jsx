@@ -8,22 +8,22 @@ import { toast } from "sonner";
 import FollowUpMessage from "./FollowUpMessage";
 
 const SECTION_KEYS = [
-  "executive_summary", "coverage_summary", "coverage_issues", "liability_assessment",
-  "damages_summary", "medical_timeline", "medical_treatment_summary", "litigation_status",
-  "venue_exposure_analysis", "exposure_analysis", "settlement_evaluation",
-  "strengths", "weaknesses", "strengths_and_weaknesses", "red_flags", "missing_information",
-  "recommended_next_steps", "suggested_follow_up_questions", "overall_claim_assessment",
-  "supervisor_review",
-];
+"executive_summary", "coverage_summary", "coverage_issues", "liability_assessment",
+"damages_summary", "medical_timeline", "medical_treatment_summary", "litigation_status",
+"venue_exposure_analysis", "exposure_analysis", "settlement_evaluation",
+"strengths", "weaknesses", "strengths_and_weaknesses", "red_flags", "missing_information",
+"recommended_next_steps", "suggested_follow_up_questions", "overall_claim_assessment",
+"supervisor_review"];
+
 
 const SUGGESTED_QUESTIONS = [
-  "What additional records should be requested?",
-  "What are the strongest liability defenses?",
-  "What facts support the claimant's position?",
-  "What reserve concerns exist?",
-  "What should defense counsel investigate?",
-  "What factors may increase settlement value?",
-];
+"What additional records should be requested?",
+"What are the strongest liability defenses?",
+"What facts support the claimant's position?",
+"What reserve concerns exist?",
+"What should defense counsel investigate?",
+"What factors may increase settlement value?"];
+
 
 export default function FollowUpAssistant({ review }) {
   const [messages, setMessages] = useState([]);
@@ -33,7 +33,7 @@ export default function FollowUpAssistant({ review }) {
 
   useEffect(() => {
     if (review.follow_up_messages) {
-      try { setMessages(JSON.parse(review.follow_up_messages)); } catch {}
+      try {setMessages(JSON.parse(review.follow_up_messages));} catch {}
     }
   }, [review.id]);
 
@@ -43,10 +43,10 @@ export default function FollowUpAssistant({ review }) {
 
   const buildContext = () => {
     const parts = [
-      `Claim: ${review.claim_name}`, `Claim #: ${review.claim_number}`,
-      `Date of Loss: ${review.date_of_loss}`, `Jurisdiction: ${review.jurisdiction}`,
-      `Line of Business: ${review.line_of_business}`,
-    ];
+    `Claim: ${review.claim_name}`, `Claim #: ${review.claim_number}`,
+    `Date of Loss: ${review.date_of_loss}`, `Jurisdiction: ${review.jurisdiction}`,
+    `Line of Business: ${review.line_of_business}`];
+
     if (review.venue_risk_level) parts.push(`Venue Risk: ${review.venue_risk_level}`);
     if (review.liability_allocation_summary) parts.push(`Liability: ${review.liability_allocation_summary}`);
     if (review.confidence_level) parts.push(`Confidence: ${review.confidence_level}`);
@@ -60,9 +60,9 @@ export default function FollowUpAssistant({ review }) {
     });
 
     if (review.claim_file_text) {
-      const fileText = review.claim_file_text.length > 15000
-        ? review.claim_file_text.slice(0, 15000) + "\n[...truncated for length]"
-        : review.claim_file_text;
+      const fileText = review.claim_file_text.length > 15000 ?
+      review.claim_file_text.slice(0, 15000) + "\n[...truncated for length]" :
+      review.claim_file_text;
       parts.push(`\n=== ORIGINAL CLAIM FILE TEXT ===\n${fileText}`);
     }
     return parts.join("\n");
@@ -70,7 +70,7 @@ export default function FollowUpAssistant({ review }) {
 
   const saveMessages = async (msgs) => {
     await base44.entities.ClaimReview.update(review.id, {
-      follow_up_messages: JSON.stringify(msgs),
+      follow_up_messages: JSON.stringify(msgs)
     });
   };
 
@@ -84,9 +84,9 @@ export default function FollowUpAssistant({ review }) {
     setMessages(updated);
     setIsLoading(true);
 
-    const history = updated
-      .map((m) => (m.role === "user" ? `User: ${m.content}` : `Assistant: ${m.analysis || ""}`))
-      .join("\n\n");
+    const history = updated.
+    map((m) => m.role === "user" ? `User: ${m.content}` : `Assistant: ${m.analysis || ""}`).
+    join("\n\n");
 
     const prompt = `You are the ClaimIntel Follow-Up Assistant. You answer follow-up questions about a specific insurance claim based ONLY on the uploaded documents and generated Claims Intelligence Report below.
 
@@ -113,9 +113,9 @@ USER QUESTION: ${question}`;
         properties: {
           analysis: { type: "string", description: "Detailed response to the question" },
           supporting_information: { type: "string", description: "Bullet-pointed list of relevant facts from the claim file and report" },
-          recommended_next_steps: { type: "string", description: "Actionable next steps if applicable" },
-        },
-      },
+          recommended_next_steps: { type: "string", description: "Actionable next steps if applicable" }
+        }
+      }
     });
 
     const assistantMsg = {
@@ -123,7 +123,7 @@ USER QUESTION: ${question}`;
       question,
       analysis: result.analysis,
       supporting_information: result.supporting_information,
-      recommended_next_steps: result.recommended_next_steps,
+      recommended_next_steps: result.recommended_next_steps
     };
 
     const finalMsgs = [...updated, assistantMsg];
@@ -173,8 +173,8 @@ USER QUESTION: ${question}`;
               </p>
             </div>
           </div>
-          {messages.length > 0 && (
-            <div className="flex items-center gap-1.5">
+          {messages.length > 0 &&
+          <div className="flex items-center gap-1.5">
               <Button variant="outline" size="sm" onClick={exportConversation} className="text-xs h-7">
                 <Download className="w-3 h-3 mr-1" />Export
               </Button>
@@ -182,59 +182,59 @@ USER QUESTION: ${question}`;
                 <Trash2 className="w-3 h-3 mr-1" />Clear
               </Button>
             </div>
-          )}
+          }
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
         {/* Conversation */}
-        {messages.length > 0 && (
-          <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
-            {messages.map((msg, i) => (
-              <FollowUpMessage key={i} message={msg} />
-            ))}
-            {isLoading && (
-              <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50 border border-dashed">
+        {messages.length > 0 &&
+        <div className="space-y-4 max-h-[600px] overflow-y-auto pr-1">
+            {messages.map((msg, i) =>
+          <FollowUpMessage key={i} message={msg} />
+          )}
+            {isLoading &&
+          <div className="flex items-center gap-2 p-4 rounded-lg bg-muted/50 border border-dashed">
                 <Loader2 className="w-4 h-4 animate-spin text-primary" />
                 <span className="text-sm text-muted-foreground">Analyzing claim file...</span>
               </div>
-            )}
+          }
             <div ref={endRef} />
           </div>
-        )}
+        }
 
         {/* Suggested Questions */}
-        {messages.length === 0 && (
-          <div className="space-y-2.5">
+        {messages.length === 0 &&
+        <div className="space-y-2.5">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Suggested Questions</p>
             <div className="flex flex-wrap gap-2">
-              {SUGGESTED_QUESTIONS.map((q) => (
-                <button
-                  key={q}
-                  onClick={() => handleSubmit(q)}
-                  disabled={isLoading}
-                  className="text-xs px-3 py-1.5 rounded-full border bg-card hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50"
-                >
+              {SUGGESTED_QUESTIONS.map((q) =>
+            <button
+              key={q}
+              onClick={() => handleSubmit(q)}
+              disabled={isLoading}
+              className="text-xs px-3 py-1.5 rounded-full border bg-card hover:bg-muted transition-colors text-muted-foreground hover:text-foreground disabled:opacity-50">
+              
                   {q}
                 </button>
-              ))}
+            )}
             </div>
           </div>
-        )}
+        }
 
         {/* Input */}
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}
-          className="flex gap-2"
-        >
+          onSubmit={(e) => {e.preventDefault();handleSubmit();}}
+          className="flex gap-2">
+          
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a follow-up question about this claim..."
             disabled={isLoading}
-            className="flex-1"
-          />
-          <Button type="submit" disabled={!input.trim() || isLoading} size="icon" className="shrink-0">
+            className="flex-1" />
+          
+          <Button type="submit" disabled={!input.trim() || isLoading} size="icon" className="shrink-0 text-[#2a4a9d]">
             <Send className="w-4 h-4" />
           </Button>
         </form>
@@ -243,6 +243,6 @@ USER QUESTION: ${question}`;
           Responses are based only on the uploaded claim documents and generated intelligence report. This is not legal advice.
         </p>
       </CardContent>
-    </Card>
-  );
+    </Card>);
+
 }
