@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import StatusBadge from "@/components/claims/StatusBadge";
 import DisclaimerBanner from "@/components/claims/DisclaimerBanner";
+import BetaBanner from "@/components/claims/BetaBanner";
+import BetaUsageIndicator from "@/components/claims/BetaUsageIndicator";
 import { format } from "date-fns";
 
 export default function Dashboard() {
@@ -46,7 +48,7 @@ export default function Dashboard() {
             Claims Dashboard
           </h1>
           <p className="text-muted-foreground mt-1.5 text-sm">
-            AI-powered claims intelligence platform for liability, coverage, venue, and settlement analysis.
+            AI-powered claims intelligence platform for liability, coverage, venue, and exposure analysis.
           </p>
         </div>
         <Link to="/new-review">
@@ -55,6 +57,12 @@ export default function Dashboard() {
             New Analysis
           </Button>
         </Link>
+      </div>
+
+      <BetaBanner />
+
+      <div className="flex justify-center">
+        <BetaUsageIndicator />
       </div>
 
       <DisclaimerBanner />

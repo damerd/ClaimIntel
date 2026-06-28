@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, FileText, Sparkles, ArrowLeft } from "lucide-react";
 import DisclaimerBanner from "@/components/claims/DisclaimerBanner";
+import BetaBanner from "@/components/claims/BetaBanner";
+import BetaUsageIndicator, { useBetaUsage } from "@/components/claims/BetaUsageIndicator";
+import PremiumLockScreen from "@/components/claims/PremiumLockScreen";
 import SectionSelector, { DEFAULT_SECTIONS } from "@/components/claims/SectionSelector";
 import DocumentUploader from "@/components/claims/DocumentUploader";
 import { SAMPLE_CLAIM } from "@/lib/sampleClaim";
@@ -107,10 +110,93 @@ Recommended Action:
 - [Choose from: Approve continued negotiation / Request additional records / Obtain defense counsel evaluation / Schedule roundtable / Consider mediation / Increase reserves / Maintain current position / Other file-specific recommendation]
 
 Authority Consideration: [State whether authority can be reasonably evaluated from the file. If not, identify what information is needed.]`,
+  exposure_analysis: `exposure_analysis: Provide a comprehensive exposure analysis using this format:
+---
+EXPOSURE ANALYSIS
+
+Policy Limits: [state limits if known]
+Demand: [amount or "not stated"]
+
+Exposure Categories:
+- Bodily Injury Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
+- Property Damage Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
+- Excess/Bad Faith Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
+
+Worst-Case Scenario:
+- [Describe the maximum realistic exposure based on file facts only]
+
+Mitigating Factors:
+- [List facts that reduce exposure]
+
+Aggravating Factors:
+- [List facts that increase exposure]
+
+Overall Exposure Rating: [Low / Moderate / High / Severe / Unknown]
+
+If insufficient information exists, state: "Exposure cannot be fully assessed from the current file."`,
+  strengths_and_weaknesses: `strengths_and_weaknesses: Provide a balanced analysis using this format:
+---
+STRENGTHS AND WEAKNESSES
+
+Defense Strengths:
+- [List facts supporting the insured/defense position]
+
+Defense Weaknesses:
+- [List facts that undermine the defense position]
+
+Claimant Strengths:
+- [List facts supporting the claimant's position]
+
+Claimant Weaknesses:
+- [List facts that undermine the claimant's position]
+
+Key Disputed Issues:
+- [Identify the primary contested factual or legal issues]
+
+Overall Position Assessment: [Brief assessment of which side has the stronger position based solely on file facts]`,
+  suggested_follow_up_questions: `suggested_follow_up_questions: Provide a numbered list of questions the adjuster should consider or investigate further, using this format:
+---
+SUGGESTED FOLLOW-UP QUESTIONS
+
+Based on the claim file, the following questions warrant further investigation:
+
+1. [Question about liability, facts, or disputed issues]
+2. [Question about coverage or policy interpretation]
+3. [Question about damages or medical treatment]
+4. [Question about evidence or documentation gaps]
+5. [Question about strategy or next steps]
+[Add more as relevant]
+
+Note: These are investigative questions based on the claim file, not legal advice.`,
+  overall_claim_assessment: `overall_claim_assessment: Provide a holistic summary using this format:
+---
+OVERALL CLAIM ASSESSMENT
+
+Claim Severity: [Low / Moderate / High / Severe]
+
+Complexity Level: [Low / Moderate / High]
+
+Key Takeaways:
+- [2-4 bullet points summarizing the most important findings]
+
+Primary Risks:
+- [List the most significant risks identified]
+
+Primary Opportunities:
+- [List any opportunities for favorable resolution]
+
+Recommended Handling:
+- [Brief recommendation on overall handling approach]
+
+Reserve Consideration:
+- [Brief note on whether reserves should be reviewed based on file facts]
+
+Summary Statement: [2-3 sentences providing an overall professional assessment of the claim based solely on the file]`,
 };
 
 export default function NewClaimReview() {
   const navigate = useNavigate();
+  const { exhausted } = useBetaUsage();
   const [form, setForm] = useState({
     claim_name: "", claim_number: "", date_of_loss: "",
     jurisdiction: "", line_of_business: "", claim_file_text: "", reviewer_notes: "",
@@ -187,7 +273,7 @@ Also always include:
 - venue_risk_level: "Low", "Moderate", "High", "Severe", or "Unknown" — extract from venue analysis or infer from jurisdiction if possible
 - liability_allocation_summary: A single line like "Insured 60% / Claimant 40%" or "Insufficient information to allocate" based on liability assessment
 
-Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_treatment_summary, litigation_status, venue_exposure_analysis, settlement_evaluation, red_flags, missing_information, recommended_next_steps, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary`;
+Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_treatment_summary, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths_and_weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary`;
 
       const schemaProps = {
         executive_summary: { type: "string" },
@@ -198,10 +284,14 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         medical_treatment_summary: { type: "string" },
         litigation_status: { type: "string" },
         venue_exposure_analysis: { type: "string" },
+        exposure_analysis: { type: "string" },
         settlement_evaluation: { type: "string" },
+        strengths_and_weaknesses: { type: "string" },
         red_flags: { type: "string" },
         missing_information: { type: "string" },
         recommended_next_steps: { type: "string" },
+        suggested_follow_up_questions: { type: "string" },
+        overall_claim_assessment: { type: "string" },
         supervisor_review: { type: "string" },
         confidence_level: { type: "string" },
         venue_risk_level: { type: "string" },
@@ -226,6 +316,10 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
 
   const isValid = form.claim_name && form.claim_number && form.date_of_loss && form.jurisdiction && form.line_of_business && form.claim_file_text && selectedSections.length > 0;
 
+  if (exhausted) {
+    return <PremiumLockScreen />;
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3">
@@ -236,6 +330,12 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
           <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">New Claims Intelligence Analysis</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Upload claim documents and enter details for AI-powered analysis</p>
         </div>
+      </div>
+
+      <BetaBanner />
+
+      <div className="flex justify-center">
+        <BetaUsageIndicator />
       </div>
 
       <DisclaimerBanner />

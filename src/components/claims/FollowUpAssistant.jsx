@@ -10,8 +10,10 @@ import FollowUpMessage from "./FollowUpMessage";
 const SECTION_KEYS = [
   "executive_summary", "coverage_summary", "coverage_issues", "liability_assessment",
   "damages_summary", "medical_treatment_summary", "litigation_status",
-  "venue_exposure_analysis", "settlement_evaluation", "red_flags",
-  "missing_information", "recommended_next_steps", "supervisor_review",
+  "venue_exposure_analysis", "exposure_analysis", "settlement_evaluation",
+  "strengths_and_weaknesses", "red_flags", "missing_information",
+  "recommended_next_steps", "suggested_follow_up_questions", "overall_claim_assessment",
+  "supervisor_review",
 ];
 
 const SUGGESTED_QUESTIONS = [

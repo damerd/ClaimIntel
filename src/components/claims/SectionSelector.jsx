@@ -3,17 +3,21 @@ import { CheckSquare, Square } from "lucide-react";
 
 export const ALL_SECTIONS = [
   { key: "executive_summary", label: "Executive Summary" },
-  { key: "coverage_summary", label: "Coverage Summary" },
+  { key: "coverage_summary", label: "Coverage Analysis" },
   { key: "coverage_issues", label: "Coverage Issues" },
   { key: "liability_assessment", label: "Liability Assessment with Percentages" },
-  { key: "damages_summary", label: "Damages Summary" },
+  { key: "damages_summary", label: "Damages Overview" },
   { key: "medical_treatment_summary", label: "Medical Treatment Summary" },
   { key: "litigation_status", label: "Litigation Status" },
-  { key: "venue_exposure_analysis", label: "Venue Exposure Analysis" },
+  { key: "venue_exposure_analysis", label: "Venue Analysis" },
+  { key: "exposure_analysis", label: "Exposure Analysis" },
   { key: "settlement_evaluation", label: "Settlement Evaluation" },
+  { key: "strengths_and_weaknesses", label: "Strengths and Weaknesses" },
   { key: "red_flags", label: "Red Flags" },
   { key: "missing_information", label: "Missing Information" },
   { key: "recommended_next_steps", label: "Recommended Next Steps" },
+  { key: "suggested_follow_up_questions", label: "Suggested Follow-Up Questions" },
+  { key: "overall_claim_assessment", label: "Overall Claim Assessment" },
   { key: "supervisor_review", label: "Supervisor Review" },
 ];
 

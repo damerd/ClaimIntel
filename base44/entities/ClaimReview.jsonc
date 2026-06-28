@@ -83,8 +83,16 @@
     "venue_exposure_analysis": {
       "type": "string"
     },
+    "exposure_analysis": {
+      "type": "string",
+      "description": "Overall exposure analysis including potential damages and worst-case scenarios"
+    },
     "settlement_evaluation": {
       "type": "string"
+    },
+    "strengths_and_weaknesses": {
+      "type": "string",
+      "description": "Strengths and weaknesses for both defense and claimant"
     },
     "red_flags": {
       "type": "string"
@@ -94,6 +102,14 @@
     },
     "recommended_next_steps": {
       "type": "string"
+    },
+    "suggested_follow_up_questions": {
+      "type": "string",
+      "description": "Suggested questions for the adjuster to consider"
+    },
+    "overall_claim_assessment": {
+      "type": "string",
+      "description": "Holistic assessment with risk rating and key takeaways"
     },
     "supervisor_review": {
       "type": "string"

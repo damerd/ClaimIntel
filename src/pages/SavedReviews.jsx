@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import StatusBadge from "@/components/claims/StatusBadge";
+import BetaBanner from "@/components/claims/BetaBanner";
 import { format } from "date-fns";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -93,6 +94,8 @@ export default function SavedReviews() {
         <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Claims Intelligence Reports</h1>
         <p className="text-sm text-muted-foreground mt-1">Browse, search, and manage ClaimIntel analyses and claim intelligence reports.</p>
       </div>
+
+      <BetaBanner />
 
       {/* Filters */}
       <Card className="shadow-sm">

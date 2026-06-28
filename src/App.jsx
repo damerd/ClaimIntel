@@ -20,6 +20,9 @@ import NewClaimReview from '@/pages/NewClaimReview';
 import ClaimReviewResults from '@/pages/ClaimReviewResults';
 import SavedReviews from '@/pages/SavedReviews';
 import SettingsDisclaimer from '@/pages/SettingsDisclaimer';
+import Pricing from '@/pages/Pricing';
+import Documentation from '@/pages/Documentation';
+import RequestAccess from '@/pages/RequestAccess';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -53,6 +56,9 @@ const AuthenticatedApp = () => {
           <Route path="/new-review" element={<NewClaimReview />} />
           <Route path="/review/:id" element={<ClaimReviewResults />} />
           <Route path="/saved-reviews" element={<SavedReviews />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/documentation" element={<Documentation />} />
+          <Route path="/request-access" element={<RequestAccess />} />
           <Route path="/settings" element={<SettingsDisclaimer />} />
         </Route>
       </Route>

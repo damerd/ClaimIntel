@@ -7,15 +7,21 @@ import {
   Shield, 
   AlertTriangle,
   Menu,
-  X
+  X,
+  CreditCard,
+  BookOpen,
+  UserPlus
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
-  { path: "/new-review", label: "New Review", icon: FilePlus },
-  { path: "/saved-reviews", label: "Saved Reviews", icon: FolderOpen },
+  { path: "/new-review", label: "New Analysis", icon: FilePlus },
+  { path: "/saved-reviews", label: "Saved Reports", icon: FolderOpen },
+  { path: "/pricing", label: "Pricing", icon: CreditCard },
+  { path: "/documentation", label: "Documentation", icon: BookOpen },
+  { path: "/request-access", label: "Request Access", icon: UserPlus },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
