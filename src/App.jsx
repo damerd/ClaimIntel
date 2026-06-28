@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ClaimIntelMark from '@/components/brand/ClaimIntelMark';
 
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -29,7 +30,8 @@ const AuthenticatedApp = () => {
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center">
+      <div className="fixed inset-0 flex flex-col items-center justify-center gap-4">
+        <ClaimIntelMark size={48} />
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
       </div>
     );

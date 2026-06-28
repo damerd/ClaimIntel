@@ -47,7 +47,8 @@ export default function Dashboard() {
           <h1 className="font-heading text-3xl md:text-4xl font-bold text-foreground tracking-tight">
             Claims Dashboard
           </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm">
+          <p className="text-sm font-semibold text-muted-foreground mt-1.5">Smarter Claims. Better Decisions.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
             AI-powered claims intelligence platform for liability, coverage, venue, and exposure analysis.
           </p>
         </div>

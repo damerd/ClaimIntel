@@ -4,7 +4,6 @@ import {
   FilePlus, 
   FolderOpen, 
   Settings, 
-  Shield, 
   AlertTriangle,
   Menu,
   X,
@@ -14,6 +13,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import ClaimIntelLogo from "@/components/brand/ClaimIntelLogo";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -34,15 +34,7 @@ export default function AppLayout() {
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 bg-[hsl(222,47%,13%)] text-white fixed inset-y-0 left-0 z-30">
         <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-              <Shield className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="font-heading text-lg font-bold tracking-tight">ClaimIntel</h1>
-              <p className="text-[11px] text-white/50 leading-tight">Smarter Claims Analysis.<br />Better Decisions.</p>
-            </div>
-          </div>
+          <ClaimIntelLogo size={36} variant="light" showTagline tagline="Smarter Claims. Better Decisions." />
         </div>
         <nav className="flex-1 p-4 space-y-1">
           {navItems.map((item) => {
@@ -75,12 +67,7 @@ export default function AppLayout() {
 
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 inset-x-0 z-40 bg-[hsl(222,47%,13%)] text-white px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-            <Shield className="w-4 h-4 text-primary" />
-          </div>
-          <h1 className="font-heading text-base font-bold">ClaimIntel</h1>
-        </div>
+          <ClaimIntelLogo size={28} variant="light" />
         <Button variant="ghost" size="icon" onClick={() => setMobileOpen(!mobileOpen)} className="text-white hover:bg-white/10">
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>

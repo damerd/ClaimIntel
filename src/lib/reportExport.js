@@ -52,6 +52,26 @@ export function exportAsPDF(review) {
   const contentWidth = pageWidth - margin * 2;
   let y = margin;
 
+  // Draw the ClaimIntel layered-C logo mark (three concentric C arcs)
+  const drawLogoMark = (cx, cy, scale) => {
+    const drawArc = (radius, r, g, b) => {
+      doc.setDrawColor(r, g, b);
+      doc.setLineWidth(3 * scale);
+      let prevX = null, prevY2 = null;
+      for (let a = 315; a >= 45; a -= 2) {
+        const rad = (a * Math.PI) / 180;
+        const x = cx + radius * Math.cos(rad);
+        const yy = cy + radius * Math.sin(rad);
+        if (prevX !== null) doc.line(prevX, prevY2, x, yy);
+        prevX = x;
+        prevY2 = yy;
+      }
+    };
+    drawArc(16 * scale, 255, 255, 255); // outer — white on navy
+    drawArc(11 * scale, 148, 163, 184); // middle — slate
+    drawArc(6 * scale, 13, 148, 136); // inner — teal
+  };
+
   const tocItems = [];
   if (overview.length > 0) tocItems.push({ title: "Claim Overview", page: 0 });
   sections.forEach((s) => tocItems.push({ title: s.title, page: 0 }));
@@ -119,18 +139,22 @@ export function exportAsPDF(review) {
 
   // === TITLE PAGE ===
   doc.setFillColor(26, 39, 68);
-  doc.rect(0, 0, pageWidth, 95, "F");
+  doc.rect(0, 0, pageWidth, 100, "F");
+  drawLogoMark(margin + 14, 45, 0.65);
   doc.setTextColor(255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("ClaimIntel", margin, 42);
+  doc.text("ClaimIntel", margin + 36, 42);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(11);
-  doc.text("Claims Intelligence Report", margin, 60);
+  doc.text("Claims Intelligence Report", margin + 36, 58);
+  doc.setFontSize(8);
+  doc.setTextColor(160);
+  doc.text("Smarter Claims. Better Decisions.", margin + 36, 72);
   doc.setFillColor(245, 166, 35);
-  doc.rect(margin, 70, 40, 2.5, "F");
+  doc.rect(margin + 36, 80, 40, 2.5, "F");
 
-  y = 130;
+  y = 135;
 
   // Claim title
   doc.setFont("helvetica", "bold");
@@ -296,6 +320,7 @@ body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; line-height: 1.
 .header h1 { margin: 0; font-size: 22pt; }
 .header .sub { font-size: 11pt; margin-top: 2px; color: #ccc; }
 .header .accent { height: 3px; background-color: #F5A623; width: 40px; margin-top: 8px; }
+.header .tagline { font-size: 9pt; margin-top: 4px; color: #0D9488; font-weight: 600; }
 .meta { font-size: 10pt; color: #555; margin: 16px 0; }
 .meta p { margin: 2px 0; }
 h2 { color: #1A2744; font-size: 14pt; border-bottom: 2px solid #F5A623; padding-bottom: 4px; margin-top: 28px; }
@@ -314,6 +339,7 @@ ol { font-size: 11pt; color: #444; }
 <div class="header">
   <h1>ClaimIntel</h1>
   <div class="sub">Claims Intelligence Report</div>
+  <div class="tagline">Smarter Claims. Better Decisions.</div>
   <div class="accent"></div>
 </div>
 <div class="meta">
@@ -353,6 +379,7 @@ export function exportAsText(review) {
   text += `Line of Business: ${review.line_of_business || "N/A"}\n`;
   text += `Report Generated: ${nowFormatted()}\n`;
   text += `Prepared by: ClaimIntel AI\n`;
+  text += `Smarter Claims. Better Decisions.\n`;
   if (review.confidence_level) text += `Confidence Level: ${review.confidence_level}\n`;
   if (review.venue_risk_level) text += `Venue Risk Level: ${review.venue_risk_level}\n`;
   if (review.liability_allocation_summary) text += `Liability Allocation: ${review.liability_allocation_summary}\n`;

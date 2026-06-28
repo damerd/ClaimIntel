@@ -74,6 +74,7 @@ export default function Pricing() {
     <div className="space-y-8 max-w-6xl mx-auto">
       <div className="text-center">
         <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight">ClaimIntel Pricing</h1>
+        <p className="text-sm font-semibold text-muted-foreground mt-2">Smarter Claims. Better Decisions.</p>
         <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
           Choose the plan that fits your team. Start free during beta and upgrade when you're ready.
         </p>
