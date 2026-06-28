@@ -33,6 +33,30 @@
       ],
       "description": "Line of business"
     },
+    "insured_name": {
+      "type": "string",
+      "description": "Insured party name"
+    },
+    "claimant_name": {
+      "type": "string",
+      "description": "Claimant name"
+    },
+    "policy_limits": {
+      "type": "string",
+      "description": "Policy limits"
+    },
+    "current_demand": {
+      "type": "string",
+      "description": "Current settlement demand"
+    },
+    "reserve_amount": {
+      "type": "string",
+      "description": "Reserve amount"
+    },
+    "defense_counsel": {
+      "type": "string",
+      "description": "Assigned defense counsel"
+    },
     "claim_file_text": {
       "type": "string",
       "description": "Full text of the claim file"
@@ -75,7 +99,12 @@
       "type": "string"
     },
     "medical_treatment_summary": {
-      "type": "string"
+      "type": "string",
+      "description": "Legacy medical treatment field"
+    },
+    "medical_timeline": {
+      "type": "string",
+      "description": "Chronological medical treatment timeline"
     },
     "litigation_status": {
       "type": "string"
@@ -85,14 +114,22 @@
     },
     "exposure_analysis": {
       "type": "string",
-      "description": "Overall exposure analysis including potential damages and worst-case scenarios"
+      "description": "Overall exposure analysis"
     },
     "settlement_evaluation": {
       "type": "string"
     },
+    "strengths": {
+      "type": "string",
+      "description": "Defense strengths"
+    },
+    "weaknesses": {
+      "type": "string",
+      "description": "Defense weaknesses"
+    },
     "strengths_and_weaknesses": {
       "type": "string",
-      "description": "Strengths and weaknesses for both defense and claimant"
+      "description": "Legacy combined field"
     },
     "red_flags": {
       "type": "string"
@@ -105,11 +142,11 @@
     },
     "suggested_follow_up_questions": {
       "type": "string",
-      "description": "Suggested questions for the adjuster to consider"
+      "description": "Suggested questions for the adjuster"
     },
     "overall_claim_assessment": {
       "type": "string",
-      "description": "Holistic assessment with risk rating and key takeaways"
+      "description": "Holistic claim assessment"
     },
     "supervisor_review": {
       "type": "string"
@@ -123,11 +160,11 @@
         "Severe",
         "Unknown"
       ],
-      "description": "Venue risk level extracted from venue analysis"
+      "description": "Venue risk level"
     },
     "liability_allocation_summary": {
       "type": "string",
-      "description": "Short summary of liability allocation percentages"
+      "description": "Liability allocation percentages"
     },
     "confidence_level": {
       "type": "string",
@@ -136,11 +173,11 @@
         "Medium",
         "Low"
       ],
-      "description": "AI confidence level in the review"
+      "description": "AI confidence level"
     },
     "follow_up_messages": {
       "type": "string",
-      "description": "JSON-serialized array of follow-up conversation messages"
+      "description": "JSON-serialized follow-up conversation"
     }
   },
   "required": [

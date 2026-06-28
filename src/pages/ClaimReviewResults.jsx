@@ -5,39 +5,68 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft, FileText, Shield, Scale, DollarSign, Stethoscope,
-  Gavel, TrendingUp, AlertTriangle, HelpCircle, ListChecks,
-  Copy, Download, Archive, Loader2, CalendarDays, MapPin,
-  Briefcase, Hash, ClipboardList, UserCheck, BarChart2,
-  Crosshair, Swords, MessageCircleQuestion, ClipboardCheck,
+  TrendingUp, AlertTriangle, HelpCircle, ListChecks,
+  Copy, Archive, Loader2, CalendarDays, MapPin,
+  Briefcase, Hash, UserCheck, BarChart2,
+  Crosshair, Swords, MessageCircleQuestion, ClipboardCheck, Gavel,
 } from "lucide-react";
 import ReviewSection from "@/components/claims/ReviewSection";
 import StatusBadge from "@/components/claims/StatusBadge";
 import ConfidenceBadge from "@/components/claims/ConfidenceBadge";
 import ReviewBadges from "@/components/claims/ReviewBadges";
 import FollowUpAssistant from "@/components/claims/FollowUpAssistant";
+import ClaimOverviewTable from "@/components/claims/ClaimOverviewTable";
+import ReportExportMenu from "@/components/claims/ReportExportMenu";
+import { getActiveSections } from "@/lib/reportContent";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
-const ALL_SECTION_DEFS = [
-  { key: "executive_summary", title: "Executive Summary", icon: FileText, accent: "bg-primary" },
-  { key: "coverage_summary", title: "Coverage Summary", icon: Shield, accent: "bg-blue-600" },
-  { key: "coverage_issues", title: "Coverage Issues", icon: Shield, accent: "bg-amber-600" },
-  { key: "liability_assessment", title: "Liability Assessment", icon: Scale, accent: "bg-indigo-600" },
-  { key: "damages_summary", title: "Damages Summary", icon: DollarSign, accent: "bg-emerald-600" },
-  { key: "medical_treatment_summary", title: "Medical Treatment Summary", icon: Stethoscope, accent: "bg-teal-600" },
-  { key: "litigation_status", title: "Litigation Status", icon: Gavel, accent: "bg-purple-600" },
-  { key: "venue_exposure_analysis", title: "Venue Analysis", icon: BarChart2, accent: "bg-sky-600" },
-  { key: "exposure_analysis", title: "Exposure Analysis", icon: Crosshair, accent: "bg-orange-600" },
-  { key: "settlement_evaluation", title: "Settlement Evaluation", icon: TrendingUp, accent: "bg-green-600" },
-  { key: "strengths_and_weaknesses", title: "Strengths and Weaknesses", icon: Swords, accent: "bg-cyan-600" },
-  { key: "red_flags", title: "Red Flags", icon: AlertTriangle, accent: "bg-red-600" },
-  { key: "missing_information", title: "Missing Information", icon: HelpCircle, accent: "bg-rose-500" },
-  { key: "recommended_next_steps", title: "Recommended Next Steps", icon: ListChecks, accent: "bg-lime-600" },
-  { key: "suggested_follow_up_questions", title: "Suggested Follow-Up Questions", icon: MessageCircleQuestion, accent: "bg-blue-500" },
-  { key: "overall_claim_assessment", title: "Overall Claim Assessment", icon: ClipboardCheck, accent: "bg-slate-700" },
-  { key: "supervisor_review", title: "Supervisor Review", icon: UserCheck, accent: "bg-violet-700" },
-];
+const SECTION_ICONS = {
+  executive_summary: FileText,
+  liability_assessment: Scale,
+  coverage_summary: Shield,
+  coverage_issues: Shield,
+  venue_exposure_analysis: BarChart2,
+  exposure_analysis: Crosshair,
+  damages_summary: DollarSign,
+  medical_timeline: Stethoscope,
+  medical_treatment_summary: Stethoscope,
+  strengths: Swords,
+  weaknesses: AlertTriangle,
+  missing_information: HelpCircle,
+  recommended_next_steps: ListChecks,
+  suggested_follow_up_questions: MessageCircleQuestion,
+  overall_claim_assessment: ClipboardCheck,
+  supervisor_review: UserCheck,
+  strengths_and_weaknesses: Swords,
+  settlement_evaluation: TrendingUp,
+  red_flags: AlertTriangle,
+  litigation_status: Gavel,
+};
+
+const SECTION_ACCENTS = {
+  executive_summary: "bg-primary",
+  liability_assessment: "bg-indigo-600",
+  coverage_summary: "bg-blue-600",
+  coverage_issues: "bg-amber-600",
+  venue_exposure_analysis: "bg-sky-600",
+  exposure_analysis: "bg-orange-600",
+  damages_summary: "bg-emerald-600",
+  medical_timeline: "bg-teal-600",
+  medical_treatment_summary: "bg-teal-600",
+  strengths: "bg-green-600",
+  weaknesses: "bg-red-500",
+  missing_information: "bg-rose-500",
+  recommended_next_steps: "bg-lime-600",
+  suggested_follow_up_questions: "bg-blue-500",
+  overall_claim_assessment: "bg-slate-700",
+  supervisor_review: "bg-violet-700",
+  strengths_and_weaknesses: "bg-cyan-600",
+  settlement_evaluation: "bg-green-600",
+  red_flags: "bg-red-600",
+  litigation_status: "bg-purple-600",
+};
 
 const VENUE_RISK_COLORS = {
   Low: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -64,50 +93,19 @@ export default function ClaimReviewResults() {
     mutationFn: () => base44.entities.ClaimReview.update(id, { status: "archived" }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReview", id] });
-      toast.success("Review archived");
+      toast.success("Report archived");
     },
   });
 
-  const getActiveSections = () => {
-    if (!review) return [];
-    const selected = review.selected_sections;
-    if (selected && selected.length > 0) {
-      return ALL_SECTION_DEFS.filter((s) => selected.includes(s.key) && review[s.key]);
-    }
-    // Fallback for old reviews without selected_sections
-    return ALL_SECTION_DEFS.filter((s) => review[s.key]);
-  };
-
   const copyToClipboard = () => {
     if (!review) return;
-    const sections = getActiveSections();
+    const sections = getActiveSections(review);
     const text = sections
-      .map((s) => `## ${s.title}\n${review[s.key]}`)
+      .map((s) => `## ${s.title}\n${s.content}`)
       .join("\n\n");
-
-    const header = `CLAIMINTEL — CLAIMS INTELLIGENCE REPORT\nClaim: ${review.claim_name}\nClaim #: ${review.claim_number}\nDate of Loss: ${review.date_of_loss}\nJurisdiction: ${review.jurisdiction}\nLine of Business: ${review.line_of_business}\nConfidence Level: ${review.confidence_level || "N/A"}\nVenue Risk: ${review.venue_risk_level || "N/A"}\nLiability: ${review.liability_allocation_summary || "N/A"}\nIntelligence Report Generated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : "N/A"}\n${"=".repeat(60)}\n\n`;
-
+    const header = `CLAIMINTEL — CLAIMS INTELLIGENCE REPORT\nClaim: ${review.claim_name}\nClaim #: ${review.claim_number}\n${"=".repeat(60)}\n\n`;
     navigator.clipboard.writeText(header + text);
-    toast.success("Copied to clipboard", { description: "Full review text has been copied." });
-  };
-
-  const exportReport = () => {
-    if (!review) return;
-    const sections = getActiveSections();
-    const text = sections
-      .map((s) => `${"=".repeat(60)}\n${s.title.toUpperCase()}\n${"=".repeat(60)}\n\n${review[s.key]}\n`)
-      .join("\n");
-
-    const header = `${"=".repeat(60)}\nCLAIMINTEL — CLAIMS INTELLIGENCE REPORT\n${"=".repeat(60)}\n\nClaim Name: ${review.claim_name}\nClaim Number: ${review.claim_number}\nDate of Loss: ${review.date_of_loss}\nJurisdiction: ${review.jurisdiction}\nLine of Business: ${review.line_of_business}\nConfidence Level: ${review.confidence_level || "N/A"}\nVenue Risk Level: ${review.venue_risk_level || "N/A"}\nLiability Allocation: ${review.liability_allocation_summary || "N/A"}\nIntelligence Report Generated: ${review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy 'at' h:mm a") : "N/A"}\n\nDISCLAIMER: This report was generated by ClaimIntel Beta for educational and portfolio purposes only. Analysis is based solely on information contained within the uploaded claim file and supporting documents. It is not legal advice and should not be used for actual claims handling decisions.\n\n`;
-
-    const blob = new Blob([header + text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ClaimIntel_Report_${review.claim_number || "report"}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success("Report exported", { description: "Text file downloaded." });
+    toast.success("Copied to clipboard", { description: "Full report text has been copied." });
   };
 
   if (isLoading) {
@@ -121,13 +119,13 @@ export default function ClaimReviewResults() {
   if (!review) {
     return (
       <div className="text-center py-24">
-        <p className="text-muted-foreground">Review not found.</p>
+        <p className="text-muted-foreground">Report not found.</p>
         <Link to="/"><Button variant="outline" className="mt-4">Back to Dashboard</Button></Link>
       </div>
     );
   }
 
-  const activeSections = getActiveSections();
+  const activeSections = getActiveSections(review);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12 relative">
@@ -167,6 +165,23 @@ export default function ClaimReviewResults() {
         </div>
       </div>
 
+      {/* Professional Report Header */}
+      <div className="bg-primary text-primary-foreground rounded-xl px-6 py-4 flex items-center justify-between relative">
+        <div>
+          <p className="font-heading text-lg font-bold">ClaimIntel</p>
+          <p className="text-xs text-primary-foreground/70">Claims Intelligence Report</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs text-primary-foreground/70">Prepared by: ClaimIntel AI</p>
+          <p className="text-xs text-primary-foreground/70">
+            {review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : format(new Date(), "MMMM d, yyyy")}
+          </p>
+        </div>
+        <div className="absolute top-2 right-3">
+          <span className="text-[9px] uppercase tracking-wider bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">Beta</span>
+        </div>
+      </div>
+
       {/* Action Bar */}
       <Card className="shadow-sm">
         <CardContent className="p-4 space-y-3">
@@ -189,9 +204,7 @@ export default function ClaimReviewResults() {
               <Button variant="outline" size="sm" onClick={copyToClipboard}>
                 <Copy className="w-3.5 h-3.5 mr-1.5" />Copy
               </Button>
-              <Button variant="outline" size="sm" onClick={exportReport}>
-                <Download className="w-3.5 h-3.5 mr-1.5" />Export
-              </Button>
+              <ReportExportMenu review={review} />
               {review.status !== "archived" && (
                 <Button variant="outline" size="sm" onClick={() => archiveMutation.mutate()} disabled={archiveMutation.isPending}>
                   <Archive className="w-3.5 h-3.5 mr-1.5" />Archive
@@ -203,15 +216,18 @@ export default function ClaimReviewResults() {
         </CardContent>
       </Card>
 
-      {/* Review Sections — only show selected/populated sections */}
+      {/* Claim Overview Table */}
+      <ClaimOverviewTable review={review} />
+
+      {/* Report Sections */}
       <div className="space-y-4">
         {activeSections.map((s) => (
           <ReviewSection
             key={s.key}
             title={s.title}
-            icon={s.icon}
-            content={review[s.key]}
-            accentColor={s.accent}
+            icon={SECTION_ICONS[s.key] || FileText}
+            content={s.content}
+            accentColor={SECTION_ACCENTS[s.key] || "bg-primary"}
           />
         ))}
       </div>

@@ -34,7 +34,7 @@ const STATES = [
 
 const SECTION_PROMPTS = {
   executive_summary: `executive_summary: A 2-3 paragraph high-level overview of the claim including parties, loss event, current status, and key exposures.`,
-  coverage_summary: `coverage_summary: Describe policy details, applicable limits, coverage status (confirmed/denied/pending), and any relevant policy conditions based solely on the file.`,
+  coverage_summary: `coverage_summary: Summarize applicable coverage including policy type, limits, covered perils, and coverage status. Identify any exclusions, potential coverage defenses, reservation of rights concerns, and outstanding coverage questions. If policy information is not in the file, state what coverage information is missing.`,
   coverage_issues: `coverage_issues: Identify any coverage gaps, exclusions, reservation of rights concerns, or policy interpretation issues. If none are apparent, state that clearly.`,
   liability_assessment: `liability_assessment: Provide a preliminary liability allocation using this exact format:
 ---
@@ -52,7 +52,7 @@ If there is insufficient information to allocate liability, state: "Preliminary 
 
 Rules: Do not total over 100%. Do not invent facts. Use "preliminary" language throughout.`,
   damages_summary: `damages_summary: Summarize total damages claimed including specials (medical bills, lost wages, property damage) and generals (pain and suffering). Break down each category with amounts if available.`,
-  medical_treatment_summary: `medical_treatment_summary: Provide a timeline of medical treatment, list providers, diagnoses, procedures, and any gaps or inconsistencies in treatment. Note if records are missing.`,
+  medical_timeline: `medical_timeline: Organize all medical treatment chronologically. For each treatment entry include: date, provider/facility, treatment rendered, and diagnosis. Note any gaps in treatment, inconsistencies, or missing records. If no medical information is in the file, state: "No medical records were identified in the claim file."`,
   litigation_status: `litigation_status: Describe current legal status. Is suit filed? Who is counsel? What court/venue? Are there any upcoming deadlines or motions? If not in litigation, state that.`,
   venue_exposure_analysis: `venue_exposure_analysis: Evaluate venue/jurisdiction exposure using this exact format:
 ---
@@ -134,26 +134,8 @@ Aggravating Factors:
 Overall Exposure Rating: [Low / Moderate / High / Severe / Unknown]
 
 If insufficient information exists, state: "Exposure cannot be fully assessed from the current file."`,
-  strengths_and_weaknesses: `strengths_and_weaknesses: Provide a balanced analysis using this format:
----
-STRENGTHS AND WEAKNESSES
-
-Defense Strengths:
-- [List facts supporting the insured/defense position]
-
-Defense Weaknesses:
-- [List facts that undermine the defense position]
-
-Claimant Strengths:
-- [List facts supporting the claimant's position]
-
-Claimant Weaknesses:
-- [List facts that undermine the claimant's position]
-
-Key Disputed Issues:
-- [Identify the primary contested factual or legal issues]
-
-Overall Position Assessment: [Brief assessment of which side has the stronger position based solely on file facts]`,
+  strengths: `strengths: List the key strengths supporting the defense/insured position. Use bullet points. Only include facts found in the claim file. If none are apparent, state that clearly.`,
+  weaknesses: `weaknesses: List the key weaknesses undermining the defense/insured position. Use bullet points. Only include facts found in the claim file. If none are apparent, state that clearly.`,
   suggested_follow_up_questions: `suggested_follow_up_questions: Provide a numbered list of questions the adjuster should consider or investigate further, using this format:
 ---
 SUGGESTED FOLLOW-UP QUESTIONS
@@ -200,6 +182,8 @@ export default function NewClaimReview() {
   const [form, setForm] = useState({
     claim_name: "", claim_number: "", date_of_loss: "",
     jurisdiction: "", line_of_business: "", claim_file_text: "", reviewer_notes: "",
+    insured_name: "", claimant_name: "", policy_limits: "",
+    current_demand: "", reserve_amount: "", defense_counsel: "",
   });
   const [selectedSections, setSelectedSections] = useState(DEFAULT_SECTIONS);
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
@@ -215,6 +199,12 @@ export default function NewClaimReview() {
       line_of_business: SAMPLE_CLAIM.line_of_business,
       claim_file_text: SAMPLE_CLAIM.claim_file_text,
       reviewer_notes: SAMPLE_CLAIM.reviewer_notes,
+      insured_name: SAMPLE_CLAIM.insured_name || "",
+      claimant_name: SAMPLE_CLAIM.claimant_name || "",
+      policy_limits: SAMPLE_CLAIM.policy_limits || "",
+      current_demand: SAMPLE_CLAIM.current_demand || "",
+      reserve_amount: SAMPLE_CLAIM.reserve_amount || "",
+      defense_counsel: SAMPLE_CLAIM.defense_counsel || "",
     });
     toast.success("Sample data loaded", { description: "Fictional commercial auto BI claim loaded." });
   };
@@ -258,6 +248,12 @@ Claim Number: ${form.claim_number}
 Date of Loss: ${form.date_of_loss}
 Jurisdiction: ${form.jurisdiction}
 Line of Business: ${form.line_of_business}
+${form.insured_name ? `Insured: ${form.insured_name}` : ""}
+${form.claimant_name ? `Claimant: ${form.claimant_name}` : ""}
+${form.policy_limits ? `Policy Limits: ${form.policy_limits}` : ""}
+${form.current_demand ? `Current Demand: ${form.current_demand}` : ""}
+${form.reserve_amount ? `Reserve Amount: ${form.reserve_amount}` : ""}
+${form.defense_counsel ? `Defense Counsel: ${form.defense_counsel}` : ""}
 ${form.reviewer_notes ? `Reviewer Notes: ${form.reviewer_notes}` : ""}
 
 ${docCount > 0 ? `DOCUMENTS INCLUDED IN THIS PACKAGE (${docCount} document${docCount > 1 ? "s" : ""}):\n${docSummaryLines}` : ""}
@@ -273,7 +269,7 @@ Also always include:
 - venue_risk_level: "Low", "Moderate", "High", "Severe", or "Unknown" — extract from venue analysis or infer from jurisdiction if possible
 - liability_allocation_summary: A single line like "Insured 60% / Claimant 40%" or "Insufficient information to allocate" based on liability assessment
 
-Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_treatment_summary, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths_and_weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary`;
+Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary`;
 
       const schemaProps = {
         executive_summary: { type: "string" },
@@ -281,12 +277,13 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         coverage_issues: { type: "string" },
         liability_assessment: { type: "string" },
         damages_summary: { type: "string" },
-        medical_treatment_summary: { type: "string" },
+        medical_timeline: { type: "string" },
         litigation_status: { type: "string" },
         venue_exposure_analysis: { type: "string" },
         exposure_analysis: { type: "string" },
         settlement_evaluation: { type: "string" },
-        strengths_and_weaknesses: { type: "string" },
+        strengths: { type: "string" },
+        weaknesses: { type: "string" },
         red_flags: { type: "string" },
         missing_information: { type: "string" },
         recommended_next_steps: { type: "string" },
@@ -383,6 +380,42 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
                   {LINES_OF_BUSINESS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Claim Overview Details */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base">Claim Overview Details</CardTitle>
+          <p className="text-xs text-muted-foreground">Additional information for the report overview table (optional)</p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Insured Name</Label>
+              <Input value={form.insured_name} onChange={(e) => updateField("insured_name", e.target.value)} placeholder="e.g. ABC Trucking Corp" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Claimant Name</Label>
+              <Input value={form.claimant_name} onChange={(e) => updateField("claimant_name", e.target.value)} placeholder="e.g. John Smith" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Policy Limits</Label>
+              <Input value={form.policy_limits} onChange={(e) => updateField("policy_limits", e.target.value)} placeholder="e.g. $1,000,000 CSL" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Current Demand</Label>
+              <Input value={form.current_demand} onChange={(e) => updateField("current_demand", e.target.value)} placeholder="e.g. $850,000" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Reserve Amount</Label>
+              <Input value={form.reserve_amount} onChange={(e) => updateField("reserve_amount", e.target.value)} placeholder="e.g. $500,000" />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Defense Counsel</Label>
+              <Input value={form.defense_counsel} onChange={(e) => updateField("defense_counsel", e.target.value)} placeholder="e.g. Smith & Associates LLP" />
             </div>
           </div>
         </CardContent>

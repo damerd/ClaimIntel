@@ -3,17 +3,15 @@ import { CheckSquare, Square } from "lucide-react";
 
 export const ALL_SECTIONS = [
   { key: "executive_summary", label: "Executive Summary" },
+  { key: "liability_assessment", label: "Liability Assessment" },
   { key: "coverage_summary", label: "Coverage Analysis" },
   { key: "coverage_issues", label: "Coverage Issues" },
-  { key: "liability_assessment", label: "Liability Assessment with Percentages" },
-  { key: "damages_summary", label: "Damages Overview" },
-  { key: "medical_treatment_summary", label: "Medical Treatment Summary" },
-  { key: "litigation_status", label: "Litigation Status" },
   { key: "venue_exposure_analysis", label: "Venue Analysis" },
   { key: "exposure_analysis", label: "Exposure Analysis" },
-  { key: "settlement_evaluation", label: "Settlement Evaluation" },
-  { key: "strengths_and_weaknesses", label: "Strengths and Weaknesses" },
-  { key: "red_flags", label: "Red Flags" },
+  { key: "damages_summary", label: "Damages Overview" },
+  { key: "medical_timeline", label: "Medical Timeline" },
+  { key: "strengths", label: "Strengths" },
+  { key: "weaknesses", label: "Weaknesses" },
   { key: "missing_information", label: "Missing Information" },
   { key: "recommended_next_steps", label: "Recommended Next Steps" },
   { key: "suggested_follow_up_questions", label: "Suggested Follow-Up Questions" },
@@ -42,7 +40,7 @@ export default function SectionSelector({ selected, onChange }) {
     <Card className="shadow-sm">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base">Review Sections to Include</CardTitle>
+          <CardTitle className="text-base">Report Sections to Include</CardTitle>
           <button
             type="button"
             onClick={toggleAll}
@@ -51,7 +49,7 @@ export default function SectionSelector({ selected, onChange }) {
             {allSelected ? "Deselect All" : "Select All"}
           </button>
         </div>
-        <p className="text-xs text-muted-foreground">Choose which sections the AI should generate for this review.</p>
+        <p className="text-xs text-muted-foreground">Choose which sections the AI should generate for this report.</p>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
