@@ -178,6 +178,22 @@
     "follow_up_messages": {
       "type": "string",
       "description": "JSON-serialized follow-up conversation"
+    },
+    "readiness_score": {
+      "type": "number",
+      "description": "Overall claim readiness percentage 0-100"
+    },
+    "readiness_categories": {
+      "type": "string",
+      "description": "JSON array of {category, status} objects"
+    },
+    "missing_requirements": {
+      "type": "string",
+      "description": "JSON array of outstanding requirement strings"
+    },
+    "readiness_recommendation": {
+      "type": "string",
+      "description": "AI recommendation for claim readiness"
     }
   },
   "required": [

@@ -1,0 +1,61 @@
+{
+  "name": "ClientAccount",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string",
+      "description": "Client account name (e.g. Walmart, Amazon)"
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "ID of the parent EnterpriseOrganization"
+    },
+    "service_instructions": {
+      "type": "string",
+      "description": "Client-specific service instructions"
+    },
+    "reporting_requirements": {
+      "type": "string",
+      "description": "Client-specific reporting requirements"
+    },
+    "investigation_requirements": {
+      "type": "string",
+      "description": "Client-specific investigation requirements"
+    },
+    "reserve_authority": {
+      "type": "string",
+      "description": "Reserve authority levels"
+    },
+    "escalation_requirements": {
+      "type": "string",
+      "description": "Escalation requirements"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this client account is active"
+    }
+  },
+  "required": [
+    "client_name",
+    "organization_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

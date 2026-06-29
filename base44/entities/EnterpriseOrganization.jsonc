@@ -1,0 +1,59 @@
+{
+  "name": "EnterpriseOrganization",
+  "type": "object",
+  "properties": {
+    "organization_name": {
+      "type": "string",
+      "description": "Organization name (e.g. Gallagher Bassett, USAA)"
+    },
+    "org_type": {
+      "type": "string",
+      "enum": [
+        "multi_client",
+        "direct"
+      ],
+      "description": "Multi-client (TPA/carrier with client accounts) or direct (single org)"
+    },
+    "guidelines_type": {
+      "type": "string",
+      "enum": [
+        "service_instructions",
+        "claims_handling_guidelines",
+        "coverage_guidelines",
+        "custom_workflows"
+      ],
+      "description": "Type of guidelines the organization uses"
+    },
+    "guidelines_content": {
+      "type": "string",
+      "description": "Organization-wide claims handling guidelines or internal workflow rules"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether this organization is active"
+    }
+  },
+  "required": [
+    "organization_name",
+    "org_type"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

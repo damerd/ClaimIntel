@@ -72,3 +72,28 @@ export function getClaimOverview(review) {
   ];
   return fields.filter((f) => f.value && String(f.value).trim());
 }
+
+export function getReadinessData(review) {
+  if (!review) return null;
+  let categories = [];
+  let missingRequirements = [];
+
+  try {
+    categories = typeof review.readiness_categories === "string"
+      ? JSON.parse(review.readiness_categories)
+      : (review.readiness_categories || []);
+  } catch { categories = []; }
+
+  try {
+    missingRequirements = typeof review.missing_requirements === "string"
+      ? JSON.parse(review.missing_requirements)
+      : (review.missing_requirements || []);
+  } catch { missingRequirements = []; }
+
+  return {
+    score: review.readiness_score,
+    categories,
+    missingRequirements,
+    recommendation: review.readiness_recommendation,
+  };
+}

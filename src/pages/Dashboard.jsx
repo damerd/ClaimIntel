@@ -16,9 +16,15 @@ import StatusBadge from "@/components/claims/StatusBadge";
 import DisclaimerBanner from "@/components/claims/DisclaimerBanner";
 import BetaBanner from "@/components/claims/BetaBanner";
 import BetaUsageIndicator from "@/components/claims/BetaUsageIndicator";
+import ClaimReadinessCard from "@/components/claims/ClaimReadinessCard";
+import ClaimReadinessPanel from "@/components/claims/ClaimReadinessPanel";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useState } from "react";
 import { format } from "date-fns";
 
 export default function Dashboard() {
+  const { showBetaElements } = useUserRole();
+  const [readinessOpen, setReadinessOpen] = useState(false);
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ["claimReviews"],
     queryFn: () => base44.entities.ClaimReview.list("-created_date", 50),
@@ -27,6 +33,7 @@ export default function Dashboard() {
   const reviewed = reviews.filter((r) => r.status === "reviewed").length;
   const drafts = reviews.filter((r) => r.status === "draft").length;
   const recent = reviews.slice(0, 5);
+  const latestReviewed = reviews.find((r) => r.status === "reviewed" && r.readiness_score != null);
 
   const stats = [
     { label: "Total Reviews", value: reviews.length, icon: FileText, color: "bg-primary/10 text-primary", link: null },
@@ -60,11 +67,13 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      <BetaBanner />
+      {showBetaElements && <BetaBanner />}
 
-      <div className="flex justify-center">
-        <BetaUsageIndicator />
-      </div>
+      {showBetaElements && (
+        <div className="flex justify-center">
+          <BetaUsageIndicator />
+        </div>
+      )}
 
       <DisclaimerBanner />
 
@@ -89,6 +98,15 @@ export default function Dashboard() {
           return stat.link ? <Link key={stat.label} to={stat.link}>{card}</Link> : card;
         })}
       </div>
+
+      {/* Claim Readiness */}
+      {latestReviewed && (
+        <ClaimReadinessCard
+          score={latestReviewed.readiness_score}
+          claimName={latestReviewed.claim_name}
+          onViewDetails={() => setReadinessOpen(true)}
+        />
+      )}
 
       {/* Recent Reviews */}
       <Card className="shadow-sm">
@@ -151,6 +169,12 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      <ClaimReadinessPanel
+        open={readinessOpen}
+        onOpenChange={setReadinessOpen}
+        review={latestReviewed}
+      />
     </div>
   );
 }

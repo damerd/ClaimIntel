@@ -18,6 +18,7 @@ import DocumentUploader from "@/components/claims/DocumentUploader";
 import { SAMPLE_CLAIM } from "@/lib/sampleClaim";
 import { logAuditEvent } from "@/lib/auditLogger";
 import { toast } from "sonner";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const LINES_OF_BUSINESS = [
   "Commercial Auto", "Personal Auto", "General Liability", "Workers Compensation",
@@ -180,6 +181,7 @@ Summary Statement: [2-3 sentences providing an overall professional assessment o
 export default function NewClaimReview() {
   const navigate = useNavigate();
   const { exhausted } = useBetaUsage();
+  const { showBetaElements } = useUserRole();
   const [form, setForm] = useState({
     claim_name: "", claim_number: "", date_of_loss: "",
     jurisdiction: "", line_of_business: "", claim_file_text: "", reviewer_notes: "",
@@ -273,8 +275,12 @@ Also always include:
 - confidence_level: "High", "Medium", or "Low" based on completeness of the claim file
 - venue_risk_level: "Low", "Moderate", "High", "Severe", or "Unknown" — extract from venue analysis or infer from jurisdiction if possible
 - liability_allocation_summary: A single line like "Insured 60% / Claimant 40%" or "Insufficient information to allocate" based on liability assessment
+- readiness_score: A number 0-100 representing overall claim readiness for evaluation based on completeness of documentation, investigation, and required information
+- readiness_categories: An array of objects with {category, status} for each of: "Liability", "Coverage", "Investigation", "Medical Documentation", "Damages Documentation". Status must be one of: "Complete", "In Progress", "Needs Records", "Partial", "Not Started"
+- missing_requirements: An array of strings listing specific outstanding investigation items needed (e.g., "Obtain Recorded Statement", "Obtain Updated Medical Records", "Obtain Wage Documentation")
+- readiness_recommendation: A concise recommendation summarizing the highest-priority missing items and their potential impact on liability, exposure, and settlement evaluation
 
-Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary`;
+Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation`;
 
       const schemaProps = {
         executive_summary: { type: "string" },
@@ -298,6 +304,10 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         confidence_level: { type: "string" },
         venue_risk_level: { type: "string" },
         liability_allocation_summary: { type: "string" },
+        readiness_score: { type: "number" },
+        readiness_categories: { type: "array", items: { type: "object", properties: { category: { type: "string" }, status: { type: "string" } } } },
+        missing_requirements: { type: "array", items: { type: "string" } },
+        readiness_recommendation: { type: "string" },
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -307,6 +317,8 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
 
       await base44.entities.ClaimReview.update(review.id, {
         ...result,
+        readiness_categories: JSON.stringify(result.readiness_categories || []),
+        missing_requirements: JSON.stringify(result.missing_requirements || []),
         status: "reviewed",
       });
 
@@ -336,11 +348,13 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         </div>
       </div>
 
-      <BetaBanner />
+      {showBetaElements && <BetaBanner />}
 
-      <div className="flex justify-center">
-        <BetaUsageIndicator />
-      </div>
+      {showBetaElements && (
+        <div className="flex justify-center">
+          <BetaUsageIndicator />
+        </div>
+      )}
 
       <DisclaimerBanner />
 

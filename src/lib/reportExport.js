@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
-import { getActiveSections, getClaimOverview } from "./reportContent";
+import { getActiveSections, getClaimOverview, getReadinessData } from "./reportContent";
 
 function nowFormatted() {
   return format(new Date(), "MMMM d, yyyy 'at' h:mm a");
@@ -72,9 +72,20 @@ export function exportAsPDF(review) {
     drawArc(6 * scale, 13, 148, 136); // inner — teal
   };
 
+  const readiness = getReadinessData(review);
+  const hasReadiness = readiness && readiness.score != null;
+
+  const renderItems = [];
+  sections.forEach((s) => {
+    renderItems.push({ type: "section", key: s.key, title: s.title, content: s.content });
+    if (hasReadiness && s.key === "executive_summary") {
+      renderItems.push({ type: "readiness", title: "Claim Readiness", data: readiness });
+    }
+  });
+
   const tocItems = [];
   if (overview.length > 0) tocItems.push({ title: "Claim Overview", page: 0 });
-  sections.forEach((s) => tocItems.push({ title: s.title, page: 0 }));
+  renderItems.forEach((item) => tocItems.push({ title: item.title, page: 0 }));
   const hasTOC = tocItems.length > 3;
 
   const addFooter = () => {
@@ -236,11 +247,32 @@ export function exportAsPDF(review) {
   }
 
   // === SECTIONS ===
-  sections.forEach((s, idx) => {
+  renderItems.forEach((item, idx) => {
     const tocIdx = overview.length > 0 ? idx + 1 : idx;
     if (hasTOC) tocItems[tocIdx].page = doc.internal.getNumberOfPages();
-    addHeading(s.title);
-    addBodyText(s.content);
+    addHeading(item.title);
+    if (item.type === "readiness") {
+      const r = item.data;
+      addBodyText(`Overall Readiness: ${Math.round(r.score)}%`);
+      if (r.categories && r.categories.length > 0) {
+        addBodyText("Category Breakdown:");
+        r.categories.forEach((cat) => {
+          addBodyText(`  ${cat.category}: ${cat.status}`);
+        });
+      }
+      if (r.missingRequirements && r.missingRequirements.length > 0) {
+        addBodyText("Missing Requirements:");
+        r.missingRequirements.forEach((req) => {
+          addBodyText(`  \u2610 ${req}`);
+        });
+      }
+      if (r.recommendation) {
+        addBodyText("AI Recommendation:");
+        addBodyText(r.recommendation);
+      }
+    } else {
+      addBodyText(item.content);
+    }
     y += 14;
   });
 
@@ -283,15 +315,47 @@ export function exportAsWord(review) {
     .map((f) => `<tr><td class="lbl">${f.label}</td><td>${f.value}</td></tr>`)
     .join("");
 
+  const readiness = getReadinessData(review);
+  const hasReadiness = readiness && readiness.score != null;
   const tocItems = [];
   if (overview.length > 0) tocItems.push("Claim Overview");
-  sections.forEach((s) => tocItems.push(s.title));
+  sections.forEach((s) => {
+    tocItems.push(s.title);
+    if (hasReadiness && s.key === "executive_summary") tocItems.push("Claim Readiness");
+  });
   const tocHtml = tocItems.length > 3
     ? `<h2>Table of Contents</h2><ol>${tocItems.map((t) => `<li>${t}</li>`).join("")}</ol>`
     : "";
 
+  const renderReadinessHtml = (r) => {
+    let html = `<h2>Claim Readiness</h2>`;
+    html += `<p><strong>Overall Readiness:</strong> ${Math.round(r.score)}%</p>`;
+    if (r.categories && r.categories.length > 0) {
+      html += `<p><strong>Category Breakdown:</strong></p>`;
+      r.categories.forEach((cat) => {
+        html += `<div style="margin-left:20px;">\u2022 ${cat.category}: ${cat.status}</div>`;
+      });
+    }
+    if (r.missingRequirements && r.missingRequirements.length > 0) {
+      html += `<p><strong>Missing Requirements:</strong></p>`;
+      r.missingRequirements.forEach((req) => {
+        html += `<div style="margin-left:20px;">\u2610 ${req}</div>`;
+      });
+    }
+    if (r.recommendation) {
+      html += `<p><strong>AI Recommendation:</strong> ${r.recommendation}</p>`;
+    }
+    return html;
+  };
+
   const sectionHtml = sections
-    .map((s) => `<h2>${s.title}</h2>${markdownToHtml(s.content)}`)
+    .map((s) => {
+      let html = `<h2>${s.title}</h2>${markdownToHtml(s.content)}`;
+      if (hasReadiness && s.key === "executive_summary") {
+        html += renderReadinessHtml(readiness);
+      }
+      return html;
+    })
     .join("");
 
   const metaLines = [
@@ -367,6 +431,8 @@ ${sectionHtml}
 export function exportAsText(review) {
   const sections = getActiveSections(review);
   const overview = getClaimOverview(review);
+  const readiness = getReadinessData(review);
+  const hasReadiness = readiness && readiness.score != null;
   const sep = "=".repeat(60);
 
   let text = `${sep}\n`;
@@ -398,12 +464,36 @@ export function exportAsText(review) {
     if (overview.length > 0) text += `  ${num++}. Claim Overview\n`;
     sections.forEach((s) => {
       text += `  ${num++}. ${s.title}\n`;
+      if (hasReadiness && s.key === "executive_summary") {
+        text += `  ${num++}. Claim Readiness\n`;
+      }
     });
   }
 
   sections.forEach((s) => {
     text += `\n${sep}\n${s.title.toUpperCase()}\n${sep}\n\n`;
     text += `${stripMarkdown(s.content)}\n`;
+    if (hasReadiness && s.key === "executive_summary") {
+      text += `\n${sep}\nCLAIM READINESS\n${sep}\n\n`;
+      text += `Overall Readiness: ${Math.round(readiness.score)}%\n\n`;
+      if (readiness.categories && readiness.categories.length > 0) {
+        text += `Category Breakdown:\n`;
+        readiness.categories.forEach((cat) => {
+          text += `  ${cat.category}: ${cat.status}\n`;
+        });
+        text += `\n`;
+      }
+      if (readiness.missingRequirements && readiness.missingRequirements.length > 0) {
+        text += `Missing Requirements:\n`;
+        readiness.missingRequirements.forEach((req) => {
+          text += `  \u2610 ${req}\n`;
+        });
+        text += `\n`;
+      }
+      if (readiness.recommendation) {
+        text += `AI Recommendation:\n${readiness.recommendation}\n`;
+      }
+    }
   });
 
   text += `\n${sep}\n`;

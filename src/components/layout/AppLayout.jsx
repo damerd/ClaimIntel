@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import AdminTriggerLogo from "@/components/brand/AdminTriggerLogo";
 import { useAuth } from "@/lib/AuthContext";
 import { useAdminMode } from "@/lib/useAdminMode";
+import OrganizationContext from "@/components/enterprise/OrganizationContext";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -121,6 +122,7 @@ export default function AppLayout() {
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 flex flex-col min-h-screen">
+        <OrganizationContext />
         <div className="p-4 md:p-8 max-w-7xl mx-auto w-full flex-1">
           <Outlet />
         </div>

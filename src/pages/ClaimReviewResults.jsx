@@ -8,7 +8,7 @@ import {
   TrendingUp, AlertTriangle, HelpCircle, ListChecks,
   Copy, Archive, Loader2, CalendarDays, MapPin,
   Briefcase, Hash, UserCheck, BarChart2,
-  Crosshair, Swords, MessageCircleQuestion, ClipboardCheck, Gavel,
+  Crosshair, Swords, MessageCircleQuestion, ClipboardCheck, Gavel, ArrowRight,
 } from "lucide-react";
 import ReviewSection from "@/components/claims/ReviewSection";
 import StatusBadge from "@/components/claims/StatusBadge";
@@ -18,8 +18,11 @@ import FollowUpAssistant from "@/components/claims/FollowUpAssistant";
 import ClaimOverviewTable from "@/components/claims/ClaimOverviewTable";
 import ReportExportMenu from "@/components/claims/ReportExportMenu";
 import ClaimIntelMark from "@/components/brand/ClaimIntelMark";
+import ClaimReadinessPanel from "@/components/claims/ClaimReadinessPanel";
+import { useUserRole } from "@/hooks/useUserRole";
 import { getActiveSections } from "@/lib/reportContent";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 
@@ -81,6 +84,8 @@ export default function ClaimReviewResults() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { showBetaElements } = useUserRole();
+  const [readinessOpen, setReadinessOpen] = useState(false);
 
   const { data: review, isLoading } = useQuery({
     queryKey: ["claimReview", id],
@@ -131,11 +136,13 @@ export default function ClaimReviewResults() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12 relative">
       {/* Beta Watermark */}
-      <div className="absolute top-2 right-2 z-10 pointer-events-none">
-        <div className="rotate-3 border-2 border-primary/10 text-primary/10 font-heading font-bold text-xs px-3 py-1 rounded">
-          Generated with ClaimIntel Beta
+      {showBetaElements && (
+        <div className="absolute top-2 right-2 z-10 pointer-events-none">
+          <div className="rotate-3 border-2 border-primary/10 text-primary/10 font-heading font-bold text-xs px-3 py-1 rounded">
+            Generated with ClaimIntel Beta
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
@@ -181,9 +188,11 @@ export default function ClaimReviewResults() {
             {review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : format(new Date(), "MMMM d, yyyy")}
           </p>
         </div>
-        <div className="absolute top-2 right-3">
-          <span className="text-[9px] uppercase tracking-wider bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">Beta</span>
-        </div>
+        {showBetaElements && (
+          <div className="absolute top-2 right-3">
+            <span className="text-[9px] uppercase tracking-wider bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">Beta</span>
+          </div>
+        )}
       </div>
 
       {/* Action Bar */}
@@ -223,6 +232,28 @@ export default function ClaimReviewResults() {
       {/* Claim Overview Table */}
       <ClaimOverviewTable review={review} />
 
+      {/* Claim Readiness */}
+      {review.readiness_score != null && (
+        <Card className="shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <ClipboardCheck className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Claim Readiness</p>
+                  <p className="text-2xl font-bold">{Math.round(review.readiness_score)}%</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => setReadinessOpen(true)}>
+                View Details <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Report Sections */}
       <div className="space-y-4">
         {activeSections.map((s) => (
@@ -253,11 +284,20 @@ export default function ClaimReviewResults() {
         <FollowUpAssistant review={review} />
       )}
 
+      {/* Claim Readiness Panel */}
+      <ClaimReadinessPanel
+        open={readinessOpen}
+        onOpenChange={setReadinessOpen}
+        review={review}
+      />
+
       {/* Disclaimer */}
       <div className="text-center py-6 border-t space-y-1">
-        <p className="text-[11px] font-medium text-muted-foreground">
-          Generated with ClaimIntel Beta
-        </p>
+        {showBetaElements && (
+          <p className="text-[11px] font-medium text-muted-foreground">
+            Generated with ClaimIntel Beta
+          </p>
+        )}
         <p className="text-[11px] font-semibold text-muted-foreground/80">
           Smarter Claims. Better Decisions.
         </p>

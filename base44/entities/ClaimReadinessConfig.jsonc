@@ -1,0 +1,64 @@
+{
+  "name": "ClaimReadinessConfig",
+  "type": "object",
+  "properties": {
+    "config_name": {
+      "type": "string",
+      "description": "Configuration name"
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "ID of the organization this config belongs to"
+    },
+    "client_account_id": {
+      "type": "string",
+      "description": "ID of the client account if client-specific"
+    },
+    "categories": {
+      "type": "string",
+      "description": "JSON array of {category, weight} objects (e.g. Liability, Coverage, Investigation, Medical, Damages, Litigation, Compliance)"
+    },
+    "required_documents": {
+      "type": "string",
+      "description": "JSON array of required document types"
+    },
+    "required_investigation_steps": {
+      "type": "string",
+      "description": "JSON array of required investigation steps"
+    },
+    "required_approvals": {
+      "type": "string",
+      "description": "JSON array of required approvals"
+    },
+    "required_service_instruction_items": {
+      "type": "string",
+      "description": "JSON array of required Service Instruction items"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this is the default config"
+    }
+  },
+  "required": [
+    "config_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": null,
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
