@@ -1,23 +1,36 @@
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { Sparkles, Lock } from "lucide-react";
+import { Sparkles, Lock, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/lib/AuthContext";
+import { useAdminMode } from "@/lib/useAdminMode";
 
 export const BETA_REVIEW_LIMIT = 2;
 
 export function useBetaUsage() {
+  const { user } = useAuth();
+  const { adminMode } = useAdminMode(user);
   const { data: reviews = [] } = useQuery({
     queryKey: ["betaUsageReviews"],
     queryFn: () => base44.entities.ClaimReview.list("-created_date", 50),
   });
   const used = reviews.length;
   const remaining = Math.max(0, BETA_REVIEW_LIMIT - used);
-  const exhausted = remaining === 0;
-  return { used, remaining, exhausted };
+  const exhausted = remaining === 0 && !adminMode;
+  return { used, remaining, exhausted, adminMode };
 }
 
 export default function BetaUsageIndicator() {
-  const { remaining, exhausted } = useBetaUsage();
+  const { remaining, exhausted, adminMode } = useBetaUsage();
+
+  if (adminMode) {
+    return (
+      <div className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 bg-accent/10 border-accent/30">
+        <ShieldCheck className="w-3.5 h-3.5 text-accent-foreground" />
+        <span className="text-xs font-medium text-accent-foreground">Admin Mode — Unlimited Access</span>
+      </div>
+    );
+  }
 
   const config = exhausted
     ? { bg: "bg-red-50 border-red-200", text: "text-red-700", dot: "bg-red-500", label: "0 of 2 — Upgrade Required" }

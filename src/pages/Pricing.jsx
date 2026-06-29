@@ -1,7 +1,40 @@
 import { Link } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, Crown, Building2, Rocket } from "lucide-react";
+import { Check, Crown, Building2, Rocket, Server, Wrench, Brain, ShieldCheck, Plug, Headphones } from "lucide-react";
+
+const ENTERPRISE_FEATURES = [
+  {
+    icon: Server,
+    title: "Enterprise Deployment",
+    description: "Deploy ClaimIntel across your organization with centralized administration, user management, role-based permissions, and configurable workflows designed for enterprise claims operations.",
+  },
+  {
+    icon: Wrench,
+    title: "Dedicated Implementation",
+    description: "Work directly with the ClaimIntel team to configure AI workflows, report templates, client-specific requirements, and organizational preferences.",
+  },
+  {
+    icon: Brain,
+    title: "Client-Specific Intelligence",
+    description: "Create organization-specific Service Instructions, reporting requirements, authority guidelines, coverage workflows, and custom AI behavior tailored to your claims operation.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Enterprise Security",
+    description: "Provide enterprise-grade security including secure authentication, encrypted document handling, role-based access control, audit logging, and complete organizational data separation.",
+  },
+  {
+    icon: Plug,
+    title: "Integrations",
+    description: "Support integrations with claims management systems, document repositories, APIs, and enterprise workflows to eliminate duplicate work and improve efficiency.",
+  },
+  {
+    icon: Headphones,
+    title: "Premium Support",
+    description: "Offer priority support, onboarding assistance, administrator training, roadmap collaboration, and a dedicated customer success experience.",
+  },
+];
 
 const TIERS = [
   {
@@ -25,7 +58,7 @@ const TIERS = [
   {
     name: "Professional",
     icon: Crown,
-    price: "Coming Soon",
+    price: "Launching Soon",
     description: "For individual adjusters and claim professionals who need full power.",
     features: [
       "Unlimited AI claim reviews",
@@ -129,9 +162,57 @@ export default function Pricing() {
 
       <div className="text-center py-4">
         <p className="text-xs text-muted-foreground">
-          ClaimIntel is currently in beta. Professional and Enterprise plans are coming soon.
+          ClaimIntel is currently in beta. Professional and Enterprise plans are launching soon.
         </p>
       </div>
+
+      {/* Enterprise Section */}
+      <div className="pt-8">
+        <div className="text-center mb-8">
+          <h2 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Enterprise Solutions</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-2xl mx-auto leading-relaxed">
+            Built for insurance carriers, TPAs, MGAs, independent adjusting firms, self-insured organizations, law firms, and enterprise claims teams.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {ENTERPRISE_FEATURES.map((feature, i) => (
+            <Card key={i} className="shadow-sm">
+              <CardHeader className="pb-3">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                  <feature.icon className="w-5 h-5 text-primary" />
+                </div>
+                <CardTitle className="text-base">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Enterprise CTA */}
+      <Card className="shadow-lg border-primary/20 overflow-hidden mt-8">
+        <div className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground px-8 py-10 text-center">
+          <h2 className="font-heading text-2xl font-bold">Ready to Bring AI to Your Claims Organization?</h2>
+          <p className="text-sm text-primary-foreground/80 mt-3 max-w-xl mx-auto leading-relaxed">
+            Schedule a personalized demonstration to see how ClaimIntel can streamline claim reviews, improve consistency, reduce review time, and help your organization make faster, better-informed claim decisions.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
+            <Link to="/request-access">
+              <Button className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg" size="lg">
+                Schedule a Demo
+              </Button>
+            </Link>
+            <Link to="/request-access">
+              <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/20 hover:bg-white/20 hover:text-white">
+                Contact Sales
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }

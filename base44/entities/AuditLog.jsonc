@@ -1,0 +1,48 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "description": "Action performed (e.g. login, claim_review_create, report_export)"
+    },
+    "success": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether the action succeeded"
+    },
+    "related_claim_id": {
+      "type": "string",
+      "description": "Related claim/review ID if applicable"
+    },
+    "user_email": {
+      "type": "string",
+      "description": "User email at time of action"
+    },
+    "metadata": {
+      "type": "string",
+      "description": "Additional context stored as JSON"
+    }
+  },
+  "required": [
+    "action"
+  ],
+  "rls": {
+    "create": null,
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -16,6 +16,7 @@ import PremiumLockScreen from "@/components/claims/PremiumLockScreen";
 import SectionSelector, { DEFAULT_SECTIONS } from "@/components/claims/SectionSelector";
 import DocumentUploader from "@/components/claims/DocumentUploader";
 import { SAMPLE_CLAIM } from "@/lib/sampleClaim";
+import { logAuditEvent } from "@/lib/auditLogger";
 import { toast } from "sonner";
 
 const LINES_OF_BUSINESS = [
@@ -211,11 +212,15 @@ export default function NewClaimReview() {
 
   const analyzeAndSave = useMutation({
     mutationFn: async () => {
+      logAuditEvent("claim_review_create", { relatedClaimId: null, metadata: { claim_name: form.claim_name, claim_number: form.claim_number } });
+
       const review = await base44.entities.ClaimReview.create({
         ...form,
         selected_sections: selectedSections,
         status: "analyzing",
       });
+
+      logAuditEvent("document_upload", { relatedClaimId: review.id, metadata: { document_count: uploadedDocuments.filter((d) => d.status === "processed").length } });
 
       const sectionInstructions = selectedSections
         .map((key) => SECTION_PROMPTS[key])
@@ -304,6 +309,8 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         ...result,
         status: "reviewed",
       });
+
+      logAuditEvent("report_generation", { relatedClaimId: review.id, metadata: { success: true } });
 
       return review.id;
     },

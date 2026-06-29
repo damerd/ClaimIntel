@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LogIn, Mail, Lock, Loader2 } from "lucide-react";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
+import { logAuditEvent } from "@/lib/auditLogger";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -20,8 +21,10 @@ export default function Login() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      logAuditEvent("login", { metadata: { email, success: true } });
       window.location.href = "/";
     } catch (err) {
+      logAuditEvent("login_failed", { success: false, metadata: { email } });
       setError(err.message || "Invalid email or password");
     } finally {
       setLoading(false);
@@ -38,12 +41,19 @@ export default function Login() {
       title="Welcome back"
       subtitle="Log in to your account"
       footer={
-        <>
-          Don't have an account?{" "}
-          <Link to="/register" className="text-primary font-medium hover:underline">
-            Create one
-          </Link>
-        </>
+        <div className="space-y-3">
+          <div>
+            Don't have an account?{" "}
+            <Link to="/register" className="text-primary font-medium hover:underline">
+              Create one
+            </Link>
+          </div>
+          <div className="flex items-center justify-center gap-4 text-xs">
+            <Link to="/privacy" className="text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link to="/security" className="text-muted-foreground hover:text-foreground">Security</Link>
+            <Link to="/terms" className="text-muted-foreground hover:text-foreground">Terms</Link>
+          </div>
+        </div>
       }
     >
       <Button

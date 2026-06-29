@@ -24,6 +24,11 @@ import SettingsDisclaimer from '@/pages/SettingsDisclaimer';
 import Pricing from '@/pages/Pricing';
 import Documentation from '@/pages/Documentation';
 import RequestAccess from '@/pages/RequestAccess';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import Security from '@/pages/Security';
+import TermsOfUse from '@/pages/TermsOfUse';
+import DataDeletionRequest from '@/pages/DataDeletionRequest';
+import AdminPanel from '@/pages/AdminPanel';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -61,6 +66,11 @@ const AuthenticatedApp = () => {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/documentation" element={<Documentation />} />
           <Route path="/request-access" element={<RequestAccess />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/security" element={<Security />} />
+          <Route path="/terms" element={<TermsOfUse />} />
+          <Route path="/data-deletion" element={<DataDeletionRequest />} />
+          <Route path="/admin" element={<AdminPanel />} />
           <Route path="/settings" element={<SettingsDisclaimer />} />
         </Route>
       </Route>
