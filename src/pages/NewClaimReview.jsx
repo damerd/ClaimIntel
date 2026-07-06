@@ -176,6 +176,18 @@ Reserve Consideration:
 - [Brief note on whether reserves should be reviewed based on file facts]
 
 Summary Statement: [2-3 sentences providing an overall professional assessment of the claim based solely on the file]`,
+  comparative_verdict_intelligence: `comparative_verdict_data: Generate a structured JSON object (NOT a string) for comparative verdict intelligence. This is decision support only — never legal advice or final settlement instructions.
+  Generate these keys:
+  - exposure_snapshot: { expected_verdict_range, expected_settlement_range, median_comparable_verdict, median_comparable_settlement, comparable_cases_found (number), comparison_quality }
+  - why_comparables_matter: Explain why selected comparables are relevant (venue, liability pattern, injury profile, treatment type, commercial vehicle involvement, plaintiff age, future care, wage loss, policy limits)
+  - similarity_breakdown: Array of { category, level, explanation } for: Venue Similarity, Liability Similarity, Medical Similarity, Treatment Similarity, Damages Similarity, Plaintiff Profile Similarity, Commercial Defendant Similarity
+  - top_comparable_cases: Array of { jurisdiction, case_type, similarity_score (0-100), verdict_or_settlement, key_injuries, treatment, liability_facts, key_similarities, key_differences, why_this_case_matters }
+  - valuation_drivers: { upward: [{ factor, rating, explanation }], downward: [{ factor, rating, explanation }] }. Upward factors: Surgery, Plaintiff-friendly venue, Commercial defendant, Future medical care, Permanent impairment, High medical specials, Lost wages, Clear liability. Downward factors: Low medical specials, Minimal property damage, Pre-existing condition, Treatment gaps, Disputed causation, Comparative negligence, Limited future care, Weak wage loss documentation. Rating: "High"/"Moderate"/"Low"
+  - recommended_considerations: Array of { item, language }. Use careful language: "Consider reviewing", "May warrant further review", "Could support", "Requires adjuster evaluation", "Subject to supervisor review". NEVER use "The adjuster should", "Settle for", "Increase reserve to", "This claim is worth". Items: Reserve adequacy review, Mediation timing, IME evaluation, Prior medical record review, Wage verification, Future care analysis, Expert review, Surveillance review (if factually supported), Social media review (if factually supported), Coverage review, Supervisor review, Settlement authority review
+  - comparison_quality_assessment: { rating ("High"/"Moderate"/"Limited"/"Insufficient"), supporting_reasons, missing_information, warnings }
+  - defense_perspective: Emphasize causation defenses, treatment gaps, prior injuries, lower-value comparables, liability defenses, damages weaknesses, opportunities to reduce exposure
+  - plaintiff_perspective: Emphasize jury appeal, strong liability facts, high-value comparables, surgery/permanent impairment, future care, commercial defendant risk, venue risk
+  GUARDRAILS: Do NOT invent specific verdicts or settlements. If no comparable data exists, say so and provide placeholder analysis based on claim facts only. Label unsupported conclusions as speculative. This is decision support, not legal advice.`,
 };
 
 export default function NewClaimReview() {
@@ -280,7 +292,7 @@ Also always include:
 - missing_requirements: An array of strings listing specific outstanding investigation items needed (e.g., "Obtain Recorded Statement", "Obtain Updated Medical Records", "Obtain Wage Documentation")
 - readiness_recommendation: A concise recommendation summarizing the highest-priority missing items and their potential impact on liability, exposure, and settlement evaluation
 
-Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation`;
+Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation, comparative_verdict_data (object or null if not requested)`;
 
       const schemaProps = {
         executive_summary: { type: "string" },
@@ -308,6 +320,100 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         readiness_categories: { type: "array", items: { type: "object", properties: { category: { type: "string" }, status: { type: "string" } } } },
         missing_requirements: { type: "array", items: { type: "string" } },
         readiness_recommendation: { type: "string" },
+        comparative_verdict_data: {
+          type: "object",
+          properties: {
+            exposure_snapshot: {
+              type: "object",
+              properties: {
+                expected_verdict_range: { type: "string" },
+                expected_settlement_range: { type: "string" },
+                median_comparable_verdict: { type: "string" },
+                median_comparable_settlement: { type: "string" },
+                comparable_cases_found: { type: "number" },
+                comparison_quality: { type: "string" }
+              }
+            },
+            why_comparables_matter: { type: "string" },
+            similarity_breakdown: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  category: { type: "string" },
+                  level: { type: "string" },
+                  explanation: { type: "string" }
+                }
+              }
+            },
+            top_comparable_cases: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  jurisdiction: { type: "string" },
+                  case_type: { type: "string" },
+                  similarity_score: { type: "number" },
+                  verdict_or_settlement: { type: "string" },
+                  key_injuries: { type: "string" },
+                  treatment: { type: "string" },
+                  liability_facts: { type: "string" },
+                  key_similarities: { type: "string" },
+                  key_differences: { type: "string" },
+                  why_this_case_matters: { type: "string" }
+                }
+              }
+            },
+            valuation_drivers: {
+              type: "object",
+              properties: {
+                upward: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      factor: { type: "string" },
+                      rating: { type: "string" },
+                      explanation: { type: "string" }
+                    }
+                  }
+                },
+                downward: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      factor: { type: "string" },
+                      rating: { type: "string" },
+                      explanation: { type: "string" }
+                    }
+                  }
+                }
+              }
+            },
+            recommended_considerations: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  item: { type: "string" },
+                  language: { type: "string" }
+                }
+              }
+            },
+            comparison_quality_assessment: {
+              type: "object",
+              properties: {
+                rating: { type: "string" },
+                supporting_reasons: { type: "string" },
+                missing_information: { type: "string" },
+                warnings: { type: "string" }
+              }
+            },
+            defense_perspective: { type: "string" },
+            plaintiff_perspective: { type: "string" }
+          }
+        },
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -319,6 +425,7 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         ...result,
         readiness_categories: JSON.stringify(result.readiness_categories || []),
         missing_requirements: JSON.stringify(result.missing_requirements || []),
+        comparative_verdict_data: result.comparative_verdict_data ? JSON.stringify(result.comparative_verdict_data) : "",
         status: "reviewed",
       });
 

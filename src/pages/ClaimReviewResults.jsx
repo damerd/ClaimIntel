@@ -19,7 +19,9 @@ import ClaimOverviewTable from "@/components/claims/ClaimOverviewTable";
 import ReportExportMenu from "@/components/claims/ReportExportMenu";
 import ClaimIntelMark from "@/components/brand/ClaimIntelMark";
 import ClaimReadinessPanel from "@/components/claims/ClaimReadinessPanel";
+import ComparativeVerdictIntelligence from "@/components/claims/ComparativeVerdictIntelligence";
 import { useUserRole } from "@/hooks/useUserRole";
+import { getComparativeVerdictData } from "@/lib/comparativeVerdictContent";
 import { getActiveSections } from "@/lib/reportContent";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
@@ -132,6 +134,7 @@ export default function ClaimReviewResults() {
   }
 
   const activeSections = getActiveSections(review);
+  const comparativeVerdictData = getComparativeVerdictData(review);
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12 relative">
@@ -266,6 +269,11 @@ export default function ClaimReviewResults() {
           />
         ))}
       </div>
+
+      {/* Comparative Verdict Intelligence */}
+      {comparativeVerdictData && (
+        <ComparativeVerdictIntelligence data={comparativeVerdictData} />
+      )}
 
       {/* Reviewer Notes */}
       {review.reviewer_notes && (

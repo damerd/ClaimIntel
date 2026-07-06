@@ -17,6 +17,7 @@ export const ALL_SECTIONS = [
   { key: "suggested_follow_up_questions", label: "Suggested Follow-Up Questions" },
   { key: "overall_claim_assessment", label: "Overall Claim Assessment" },
   { key: "supervisor_review", label: "Supervisor Review" },
+  { key: "comparative_verdict_intelligence", label: "Comparative Verdict Intelligence" },
 ];
 
 export const DEFAULT_SECTIONS = ALL_SECTIONS.map((s) => s.key);

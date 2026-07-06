@@ -194,6 +194,10 @@
     "readiness_recommendation": {
       "type": "string",
       "description": "AI recommendation for claim readiness"
+    },
+    "comparative_verdict_data": {
+      "type": "string",
+      "description": "JSON-serialized comparative verdict intelligence data"
     }
   },
   "required": [
