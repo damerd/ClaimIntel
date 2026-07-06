@@ -202,3 +202,24 @@ Users should only upload claim information they are authorized to access and han
 ClaimIntel is under continuous development, with new features, workflow enhancements, and AI capabilities being added on an ongoing basis.
 
 Feedback, feature suggestions, and collaboration are welcome.
+
+---
+
+## Version History
+
+ClaimIntel uses a simple versioning structure to track meaningful product progress.
+
+Current version: **v0.1.0**
+
+### Versioning Approach
+
+* **v0.x.x** — Prototype and early development
+* **v1.0.0** — First production-ready release
+* **v1.x.x** — New features and workflow improvements
+* **v2.x.x** — Major platform or architecture changes
+
+### Current Milestone
+
+**v0.1.0** represents the initial ClaimIntel platform foundation, including AI claim review, structured reporting, liability analysis, coverage review, venue analysis, claim readiness assessment, Follow-Up Assistant, and PDF report export.
+
+Future versions will focus on comparative verdict intelligence, reserve recommendations, settlement strategy, enterprise workflows, and adaptive claim outcome learning.
