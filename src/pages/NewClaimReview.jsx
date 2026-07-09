@@ -56,6 +56,25 @@ const SECTION_PROMPTS = {
   comparative_verdict_intelligence: `comparative_verdict_data: Generate a structured JSON object for comparative verdict intelligence. This is decision support only, not legal advice. Do not invent specific verdicts or settlements. If no comparable data exists, say so. Include exposure_snapshot, why_comparables_matter, similarity_breakdown, top_comparable_cases, valuation_drivers, recommended_considerations, comparison_quality_assessment, defense_perspective, and plaintiff_perspective. Use careful language such as "consider reviewing" and "may warrant further review." Never say "settle for" or "this claim is worth."`,
 };
 
+const VALIDATION_ENGINE_INSTRUCTIONS = `
+Also always create validation_engine_data: a structured JSON object representing the Validation Engine results. The Validation Engine validates the Shared Claim Knowledge Layer before downstream intelligence modules use it. It must be completely fact-based.
+
+VALIDATION RULES:
+- Only identify conflicts supported by uploaded documents, OCR text, user-entered claim information, or claim_knowledge. Never invent facts.
+- If information is missing, identify it as missing rather than making assumptions.
+- Detect inconsistencies involving: parties, dates, policy limits, injuries, damages, reserve amounts, demands, venue, litigation status, and coverage information.
+
+Return the following structure:
+- overall_validation_status: "Clear", "Needs Review", "High Risk", or "Insufficient Information"
+- validation_score: number 0-100
+- conflicts: array of { issue, category, source_detail, impact, priority, recommended_follow_up }
+- missing_evidence: array of { item, category, why_it_matters, priority }
+- confidence_factors: array of { area, confidence, explanation }
+- priority_flags: array of { flag, severity, explanation }
+- recommended_validation_actions: array of recommended investigative action strings
+- validation_summary: concise professional summary explaining why the validation score was assigned
+`;
+
 const CLAIM_KNOWLEDGE_INSTRUCTIONS = `
 Also always create claim_knowledge: a structured JSON object representing the internal Shared Claim Knowledge Layer. It must be based only on claim file text and entered form fields. Use empty strings, empty arrays, or "Unknown" when facts are unavailable. Include:
 - claim_identity: { claim_name, claim_number, date_of_loss, jurisdiction, line_of_business, status }
@@ -91,6 +110,64 @@ const buildClaimKnowledgeSchema = () => ({
     missing_information: { type: "array", items: { type: "object" } },
     conflicts: { type: "array", items: { type: "object" } },
     confidence: { type: "object" },
+  },
+});
+
+const buildValidationEngineSchema = () => ({
+  type: "object",
+  properties: {
+    overall_validation_status: { type: "string" },
+    validation_score: { type: "number" },
+    conflicts: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          issue: { type: "string" },
+          category: { type: "string" },
+          source_detail: { type: "string" },
+          impact: { type: "string" },
+          priority: { type: "string" },
+          recommended_follow_up: { type: "string" },
+        },
+      },
+    },
+    missing_evidence: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          item: { type: "string" },
+          category: { type: "string" },
+          why_it_matters: { type: "string" },
+          priority: { type: "string" },
+        },
+      },
+    },
+    confidence_factors: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          area: { type: "string" },
+          confidence: { type: "string" },
+          explanation: { type: "string" },
+        },
+      },
+    },
+    priority_flags: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          flag: { type: "string" },
+          severity: { type: "string" },
+          explanation: { type: "string" },
+        },
+      },
+    },
+    recommended_validation_actions: { type: "array", items: { type: "string" } },
+    validation_summary: { type: "string" },
   },
 });
 
@@ -213,8 +290,9 @@ Also always include:
 - readiness_categories: array of {category, status} for Liability, Coverage, Investigation, Medical Documentation, Damages Documentation
 - missing_requirements: array of specific outstanding investigation items
 - readiness_recommendation: concise recommendation summarizing highest-priority missing items and impact
+${VALIDATION_ENGINE_INSTRUCTIONS}
 ${CLAIM_KNOWLEDGE_INSTRUCTIONS}
-Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation, comparative_verdict_data`;
+Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation, comparative_verdict_data, validation_engine_data`;
 
       const schemaProps = {
         claim_knowledge: buildClaimKnowledgeSchema(),
@@ -244,6 +322,7 @@ Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, cov
         missing_requirements: { type: "array", items: { type: "string" } },
         readiness_recommendation: { type: "string" },
         comparative_verdict_data: buildComparativeVerdictSchema(),
+        validation_engine_data: buildValidationEngineSchema(),
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -257,6 +336,7 @@ Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, cov
         readiness_categories: JSON.stringify(result.readiness_categories || []),
         missing_requirements: JSON.stringify(result.missing_requirements || []),
         comparative_verdict_data: result.comparative_verdict_data ? JSON.stringify(result.comparative_verdict_data) : "",
+        validation_engine_data: result.validation_engine_data ? JSON.stringify(result.validation_engine_data) : "",
         status: "reviewed",
       });
 
