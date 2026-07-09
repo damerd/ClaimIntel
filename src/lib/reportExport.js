@@ -263,7 +263,13 @@ export function exportAsPDF(review) {
       if (r.categories && r.categories.length > 0) {
         addBodyText("Category Breakdown:");
         r.categories.forEach((cat) => {
-          addBodyText(`  ${cat.category}: ${cat.status}`);
+          if (typeof cat === "string") {
+            addBodyText(`  ${cat}`);
+          } else {
+            const label = cat.category || "Category";
+            const status = cat.status || "Unknown";
+            addBodyText(`  ${label}: ${status}`);
+          }
         });
       }
       if (r.missingRequirements && r.missingRequirements.length > 0) {
@@ -345,7 +351,11 @@ export function exportAsWord(review) {
     if (r.categories && r.categories.length > 0) {
       html += `<p><strong>Category Breakdown:</strong></p>`;
       r.categories.forEach((cat) => {
-        html += `<div style="margin-left:20px;">\u2022 ${cat.category}: ${cat.status}</div>`;
+        if (typeof cat === "string") {
+          html += `<div style="margin-left:20px;">\u2022 ${cat}</div>`;
+        } else {
+          html += `<div style="margin-left:20px;">\u2022 ${cat.category || "Category"}: ${cat.status || "Unknown"}</div>`;
+        }
       });
     }
     if (r.missingRequirements && r.missingRequirements.length > 0) {
@@ -499,7 +509,11 @@ export function exportAsText(review) {
       if (readiness.categories && readiness.categories.length > 0) {
         text += `Category Breakdown:\n`;
         readiness.categories.forEach((cat) => {
-          text += `  ${cat.category}: ${cat.status}\n`;
+          if (typeof cat === "string") {
+            text += `  ${cat}\n`;
+          } else {
+            text += `  ${cat.category || "Category"}: ${cat.status || "Unknown"}\n`;
+          }
         });
         text += `\n`;
       }

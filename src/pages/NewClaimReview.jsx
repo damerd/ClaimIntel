@@ -64,6 +64,12 @@ VALIDATION RULES:
 - If information is missing, identify it as missing rather than making assumptions.
 - Detect inconsistencies involving: parties, dates, policy limits, injuries, damages, reserve amounts, demands, venue, litigation status, and coverage information.
 
+CONFLICT DETECTION SAFEGUARD:
+- If the entered form fields (claim_name, claimant_name, jurisdiction, line_of_business, insured_name) conflict with or do not appear in the claim_file_text or uploaded document content, add this as a conflict entry in validation_engine_data with category "Form Field Mismatch" and priority "High".
+- Do NOT silently merge facts from mismatched form fields with claim file content. If a form field value does not appear in the claim file text, note this discrepancy explicitly in the conflicts array.
+- The report must analyze only the claim_file_text and uploaded documents. Form fields that do not match the file should be flagged as conflicts, not assumed to be correct.
+- Never silently use facts from form fields that contradict the claim file text without flagging the discrepancy.
+
 Return the following structure:
 - overall_validation_status: "Clear", "Needs Review", "High Risk", or "Insufficient Information"
 - validation_score: number 0-100
@@ -198,10 +204,13 @@ export default function NewClaimReview() {
   });
   const [selectedSections, setSelectedSections] = useState(DEFAULT_SECTIONS);
   const [uploadedDocuments, setUploadedDocuments] = useState([]);
+  const [uploaderResetKey, setUploaderResetKey] = useState(0);
 
   const updateField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
 
   const loadSample = () => {
+    setUploadedDocuments([]);
+    setUploaderResetKey((k) => k + 1);
     setForm({
       claim_name: SAMPLE_CLAIM.claim_name,
       claim_number: SAMPLE_CLAIM.claim_number,
@@ -218,6 +227,64 @@ export default function NewClaimReview() {
       defense_counsel: SAMPLE_CLAIM.defense_counsel || "",
     });
     toast.success("Sample data loaded", { description: "Fictional commercial auto BI claim loaded." });
+  };
+
+  const COMMON_WORDS = new Set(["v", "v.", "vs", "vs.", "the", "llc", "inc", "corp", "and", "or", "of", "a", "an"]);
+
+  const LOB_SEARCH_TERMS = {
+    "commercial auto": ["commercial auto", "auto liability", "truck", "vehicle"],
+    "personal auto": ["personal auto", "auto", "vehicle", "car"],
+    "general liability": ["general liability", "premises", "liability"],
+    "workers compensation": ["workers compensation", "workers' comp", "employer", "workplace"],
+    "property": ["property", "building", "fire", "water damage"],
+    "professional liability": ["professional liability", "errors", "omissions", "malpractice"],
+    "product liability": ["product liability", "product", "defective"],
+    "other": [],
+  };
+
+  const detectFieldConflicts = () => {
+    const text = (form.claim_file_text || "").toLowerCase();
+    if (!text.trim()) return [];
+    const conflicts = [];
+
+    if (form.jurisdiction && !text.includes(form.jurisdiction.toLowerCase())) {
+      conflicts.push({ field: "Jurisdiction", value: form.jurisdiction });
+    }
+
+    if (form.claim_name) {
+      const words = form.claim_name.toLowerCase().split(/[\s.,]+/).filter((w) => w.length > 2 && !COMMON_WORDS.has(w));
+      if (words.length > 0 && !words.some((w) => text.includes(w))) {
+        conflicts.push({ field: "Claim Name", value: form.claim_name });
+      }
+    }
+
+    if (form.claimant_name) {
+      const words = form.claimant_name.toLowerCase().split(/[\s.,]+/).filter((w) => w.length > 2 && !COMMON_WORDS.has(w));
+      if (words.length > 0 && !words.some((w) => text.includes(w))) {
+        conflicts.push({ field: "Claimant Name", value: form.claimant_name });
+      }
+    }
+
+    if (form.line_of_business) {
+      const terms = LOB_SEARCH_TERMS[form.line_of_business.toLowerCase()] || [form.line_of_business.toLowerCase()];
+      if (terms.length > 0 && !terms.some((t) => text.includes(t))) {
+        conflicts.push({ field: "Line of Business", value: form.line_of_business });
+      }
+    }
+
+    return conflicts;
+  };
+
+  const handleAnalyze = () => {
+    const conflicts = detectFieldConflicts();
+    if (conflicts.length > 0) {
+      const conflictList = conflicts.map((c) => `• ${c.field}: "${c.value}"`).join("\n");
+      const proceed = window.confirm(
+        `Potential conflicts detected between form fields and claim file text:\n\n${conflictList}\n\nThe claim file text may not match the entered claim information.\nDo you want to proceed with analysis anyway?`
+      );
+      if (!proceed) return;
+    }
+    analyzeAndSave.mutate();
   };
 
   const analyzeAndSave = useMutation({
@@ -445,7 +512,7 @@ Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, cov
         </CardContent>
       </Card>
 
-      <DocumentUploader onTextChange={(text) => updateField("claim_file_text", text)} onDocumentsChange={setUploadedDocuments} />
+      <DocumentUploader key={uploaderResetKey} onTextChange={(text) => updateField("claim_file_text", text)} onDocumentsChange={setUploadedDocuments} />
       <SectionSelector selected={selectedSections} onChange={setSelectedSections} />
 
       <Card className="shadow-sm">
@@ -457,7 +524,7 @@ Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, cov
 
       <div className="flex justify-end gap-3 pb-8">
         <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
-        <Button onClick={() => analyzeAndSave.mutate()} disabled={!isValid || analyzeAndSave.isPending} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 min-w-[180px]">
+        <Button onClick={handleAnalyze} disabled={!isValid || analyzeAndSave.isPending} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 min-w-[180px]">
           {analyzeAndSave.isPending ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing Claim...</>
           ) : (
