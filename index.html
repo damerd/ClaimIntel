@@ -1,15 +1,205 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='10' fill='%231A2744'/%3E%3Cpath d='M39 9 A21 21 0 1 0 39 39' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3Cpath d='M34 14 A14 14 0 1 0 34 34' stroke='%2394A3B8' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3Cpath d='M29 19 A7 7 0 1 0 29 29' stroke='%230D9488' stroke-width='4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="/manifest.json" />
-    <title>ClaimIntel</title>
-    <meta name="description" content="ClaimIntel — Smarter Claims. Better Decisions. AI-powered claims intelligence platform for liability, coverage, venue, and exposure analysis." />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Damien Dennis | Computer Science Portfolio</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f6f8;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 70px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 42px;
+      margin-bottom: 10px;
+    }
+
+    header h2 {
+      font-size: 22px;
+      font-weight: normal;
+      margin-bottom: 20px;
+    }
+
+    header p {
+      max-width: 800px;
+      margin: 0 auto;
+      font-size: 18px;
+    }
+
+    nav {
+      background: #374151;
+      text-align: center;
+      padding: 15px;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 18px;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: auto;
+      padding: 40px 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      margin-bottom: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: #111827;
+    }
+
+    .button {
+      display: inline-block;
+      background: #111827;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .button:hover {
+      background: #374151;
+    }
+
+    .skills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .skill {
+      background: #e5e7eb;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      background: #111827;
+      color: white;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Damien Dennis</h1>
+    <h2>Computer Science Portfolio</h2>
+    <p>
+      Software engineering, artificial intelligence, and insurance technology focused on building
+      practical tools that improve analysis, decision-making, and operational efficiency.
+    </p>
+  </header>
+
+  <nav>
+    <a href="index.html">Home</a>
+    <a href="claimintel.html">ClaimIntel</a>
+    <a href="projects.html">Projects</a>
+    <a href="self-assessment.html">Self-Assessment</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+
+  <main class="container">
+
+    <section class="card">
+      <h2>About This Portfolio</h2>
+      <p>
+        This ePortfolio represents my growth throughout the Computer Science program at
+        Southern New Hampshire University. It highlights my development in software engineering,
+        algorithms and data structures, databases, security, and professional communication.
+      </p>
+      <p>
+        The portfolio is centered around ClaimIntel, an AI-powered insurance claims analysis
+        platform designed to support more consistent, organized, and data-informed claim reviews.
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>Featured Capstone Project: ClaimIntel</h2>
+      <p>
+        ClaimIntel is an AI-powered insurance claims analysis platform that reviews claim documents,
+        identifies key facts, analyzes liability and exposure, and generates structured reports for
+        claim professionals.
+      </p>
+      <p>
+        For my CS 499 capstone, I will enhance ClaimIntel in three areas: software engineering and
+        design, algorithms and data structures, and databases.
+      </p>
+      <a class="button" href="claimintel.html">View ClaimIntel</a>
+    </section>
+
+    <section class="card">
+      <h2>Technical Skills</h2>
+      <div class="skills">
+        <span class="skill">Software Engineering</span>
+        <span class="skill">Artificial Intelligence</span>
+        <span class="skill">Java</span>
+        <span class="skill">Python</span>
+        <span class="skill">JavaScript</span>
+        <span class="skill">HTML/CSS</span>
+        <span class="skill">SQL</span>
+        <span class="skill">Database Design</span>
+        <span class="skill">Algorithms</span>
+        <span class="skill">Data Structures</span>
+        <span class="skill">Secure Coding</span>
+        <span class="skill">GitHub</span>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Capstone Enhancement Areas</h2>
+      <p>
+        <strong>Software Engineering and Design:</strong> Improve ClaimIntel’s architecture,
+        usability, reporting workflow, and maintainability.
+      </p>
+      <p>
+        <strong>Algorithms and Data Structures:</strong> Add structured scoring logic for liability,
+        injury severity, venue risk, evidence gaps, and exposure analysis.
+      </p>
+      <p>
+        <strong>Databases:</strong> Add persistent storage for claims, policies, reports, users,
+        documents, and historical analysis.
+      </p>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>© 2026 Damien Dennis | Computer Science Portfolio</p>
+  </footer>
+
+</body>
 </html>
