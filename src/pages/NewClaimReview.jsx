@@ -35,160 +35,79 @@ const STATES = [
 ];
 
 const SECTION_PROMPTS = {
-  executive_summary: `executive_summary: A 2-3 paragraph high-level overview of the claim including parties, loss event, current status, and key exposures.`,
-  coverage_summary: `coverage_summary: Summarize applicable coverage including policy type, limits, covered perils, and coverage status. Identify any exclusions, potential coverage defenses, reservation of rights concerns, and outstanding coverage questions. If policy information is not in the file, state what coverage information is missing.`,
-  coverage_issues: `coverage_issues: Identify any coverage gaps, exclusions, reservation of rights concerns, or policy interpretation issues. If none are apparent, state that clearly.`,
-  liability_assessment: `liability_assessment: Provide a preliminary liability allocation using this exact format:
----
-PRELIMINARY LIABILITY ALLOCATION (based on claim file text only)
-
-Insured: ___%
-Claimant: ___%
-Other/Unknown: ___%
-
-Basis:
-- [List facts from the file supporting this allocation]
-- [Identify facts that strengthen or weaken the insured's defense]
-
-If there is insufficient information to allocate liability, state: "Preliminary liability allocation cannot be determined from the current file. The following information is needed: [list]"
-
-Rules: Do not total over 100%. Do not invent facts. Use "preliminary" language throughout.`,
-  damages_summary: `damages_summary: Summarize total damages claimed including specials (medical bills, lost wages, property damage) and generals (pain and suffering). Break down each category with amounts if available.`,
-  medical_timeline: `medical_timeline: Organize all medical treatment chronologically. For each treatment entry include: date, provider/facility, treatment rendered, and diagnosis. Note any gaps in treatment, inconsistencies, or missing records. If no medical information is in the file, state: "No medical records were identified in the claim file."`,
-  litigation_status: `litigation_status: Describe current legal status. Is suit filed? Who is counsel? What court/venue? Are there any upcoming deadlines or motions? If not in litigation, state that.`,
-  venue_exposure_analysis: `venue_exposure_analysis: Evaluate venue/jurisdiction exposure using this exact format:
----
-VENUE EXPOSURE ANALYSIS
-
-Jurisdiction/Venue: [from claim file]
-Venue Risk Level: [Low / Moderate / High / Severe / Unknown]
-
-Relevant Factors:
-- Plaintiff-friendly or defense-friendly tendencies (only if supported by file text)
-- Jury verdict risk
-- Litigation cost risk
-- Local procedural concerns
-- Known reputational or trucking/commercial auto risk factors
-- Whether venue may increase settlement pressure
-
-Impact on Claim:
-- Explain how venue may affect settlement value, litigation strategy, or trial risk.
-
-If the claim file does not provide enough venue information, state: "Venue exposure cannot be fully assessed from the current file." Do not cite real case law unless it is in the claim file.`,
-  settlement_evaluation: `settlement_evaluation: Evaluate settlement posture using this format:
----
-SETTLEMENT EVALUATION
-
-Current Demand: [amount or "not stated"]
-Specials / Documented Damages: [itemized if available]
-
-Strengths Supporting Settlement:
-- [list]
-
-Weaknesses Reducing Value:
-- [list]
-
-Suggested Negotiation Range: [only if supported by the file — otherwise state "Insufficient information to recommend a negotiation range at this time. The following is needed: [list]"]
-
-Note: Do not recommend a specific authority figure unless the file fully supports it.`,
-  red_flags: `red_flags: List any concerns, inconsistencies, fraud indicators, coverage issues, or litigation risks that warrant attention. If none, state that explicitly.`,
-  missing_information: `missing_information: List all information that is absent from the claim file that would be needed for a complete review. Be specific about what is missing and why it matters.`,
-  recommended_next_steps: `recommended_next_steps: Provide a numbered list of actionable next steps for the adjuster, clearly labeled as recommendations. Separate factual findings from recommendations.`,
-  supervisor_review: `supervisor_review: Provide a concise manager-level summary using this exact format:
----
-SUPERVISOR REVIEW
-
-Coverage: [Clear / Issues Present / Unknown]
-
-Liability: [Preliminary allocation and brief 1-2 sentence explanation]
-
-Damages: [Low / Moderate / High / Severe / Unknown]
-
-Venue: [Low / Moderate / High / Severe / Unknown]
-
-Settlement: [Current demand and recommended negotiation position if supported — otherwise "Insufficient information"]
-
-Recommended Action:
-- [Choose from: Approve continued negotiation / Request additional records / Obtain defense counsel evaluation / Schedule roundtable / Consider mediation / Increase reserves / Maintain current position / Other file-specific recommendation]
-
-Authority Consideration: [State whether authority can be reasonably evaluated from the file. If not, identify what information is needed.]`,
-  exposure_analysis: `exposure_analysis: Provide a comprehensive exposure analysis using this format:
----
-EXPOSURE ANALYSIS
-
-Policy Limits: [state limits if known]
-Demand: [amount or "not stated"]
-
-Exposure Categories:
-- Bodily Injury Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
-- Property Damage Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
-- Excess/Bad Faith Exposure: [Low / Moderate / High / Severe / Unknown — with brief explanation]
-
-Worst-Case Scenario:
-- [Describe the maximum realistic exposure based on file facts only]
-
-Mitigating Factors:
-- [List facts that reduce exposure]
-
-Aggravating Factors:
-- [List facts that increase exposure]
-
-Overall Exposure Rating: [Low / Moderate / High / Severe / Unknown]
-
-If insufficient information exists, state: "Exposure cannot be fully assessed from the current file."`,
-  strengths: `strengths: List the key strengths supporting the defense/insured position. Use bullet points. Only include facts found in the claim file. If none are apparent, state that clearly.`,
-  weaknesses: `weaknesses: List the key weaknesses undermining the defense/insured position. Use bullet points. Only include facts found in the claim file. If none are apparent, state that clearly.`,
-  suggested_follow_up_questions: `suggested_follow_up_questions: Provide a numbered list of questions the adjuster should consider or investigate further, using this format:
----
-SUGGESTED FOLLOW-UP QUESTIONS
-
-Based on the claim file, the following questions warrant further investigation:
-
-1. [Question about liability, facts, or disputed issues]
-2. [Question about coverage or policy interpretation]
-3. [Question about damages or medical treatment]
-4. [Question about evidence or documentation gaps]
-5. [Question about strategy or next steps]
-[Add more as relevant]
-
-Note: These are investigative questions based on the claim file, not legal advice.`,
-  overall_claim_assessment: `overall_claim_assessment: Provide a holistic summary using this format:
----
-OVERALL CLAIM ASSESSMENT
-
-Claim Severity: [Low / Moderate / High / Severe]
-
-Complexity Level: [Low / Moderate / High]
-
-Key Takeaways:
-- [2-4 bullet points summarizing the most important findings]
-
-Primary Risks:
-- [List the most significant risks identified]
-
-Primary Opportunities:
-- [List any opportunities for favorable resolution]
-
-Recommended Handling:
-- [Brief recommendation on overall handling approach]
-
-Reserve Consideration:
-- [Brief note on whether reserves should be reviewed based on file facts]
-
-Summary Statement: [2-3 sentences providing an overall professional assessment of the claim based solely on the file]`,
-  comparative_verdict_intelligence: `comparative_verdict_data: Generate a structured JSON object (NOT a string) for comparative verdict intelligence. This is decision support only — never legal advice or final settlement instructions.
-  Generate these keys:
-  - exposure_snapshot: { expected_verdict_range, expected_settlement_range, median_comparable_verdict, median_comparable_settlement, comparable_cases_found (number), comparison_quality }
-  - why_comparables_matter: Explain why selected comparables are relevant (venue, liability pattern, injury profile, treatment type, commercial vehicle involvement, plaintiff age, future care, wage loss, policy limits)
-  - similarity_breakdown: Array of { category, level, explanation } for: Venue Similarity, Liability Similarity, Medical Similarity, Treatment Similarity, Damages Similarity, Plaintiff Profile Similarity, Commercial Defendant Similarity
-  - top_comparable_cases: Array of { jurisdiction, case_type, similarity_score (0-100), verdict_or_settlement, key_injuries, treatment, liability_facts, key_similarities, key_differences, why_this_case_matters }
-  - valuation_drivers: { upward: [{ factor, rating, explanation }], downward: [{ factor, rating, explanation }] }. Upward factors: Surgery, Plaintiff-friendly venue, Commercial defendant, Future medical care, Permanent impairment, High medical specials, Lost wages, Clear liability. Downward factors: Low medical specials, Minimal property damage, Pre-existing condition, Treatment gaps, Disputed causation, Comparative negligence, Limited future care, Weak wage loss documentation. Rating: "High"/"Moderate"/"Low"
-  - recommended_considerations: Array of { item, language }. Use careful language: "Consider reviewing", "May warrant further review", "Could support", "Requires adjuster evaluation", "Subject to supervisor review". NEVER use "The adjuster should", "Settle for", "Increase reserve to", "This claim is worth". Items: Reserve adequacy review, Mediation timing, IME evaluation, Prior medical record review, Wage verification, Future care analysis, Expert review, Surveillance review (if factually supported), Social media review (if factually supported), Coverage review, Supervisor review, Settlement authority review
-  - comparison_quality_assessment: { rating ("High"/"Moderate"/"Limited"/"Insufficient"), supporting_reasons, missing_information, warnings }
-  - defense_perspective: Emphasize causation defenses, treatment gaps, prior injuries, lower-value comparables, liability defenses, damages weaknesses, opportunities to reduce exposure
-  - plaintiff_perspective: Emphasize jury appeal, strong liability facts, high-value comparables, surgery/permanent impairment, future care, commercial defendant risk, venue risk
-  GUARDRAILS: Do NOT invent specific verdicts or settlements. If no comparable data exists, say so and provide placeholder analysis based on claim facts only. Label unsupported conclusions as speculative. This is decision support, not legal advice.`,
+  executive_summary: "executive_summary: Provide a 2-3 paragraph overview of the claim, parties, loss event, current status, key risks, and key exposures.",
+  coverage_summary: "coverage_summary: Summarize coverage, policy type, limits, covered perils, coverage status, exclusions, reservation of rights issues, and missing policy information.",
+  coverage_issues: "coverage_issues: Identify coverage gaps, exclusions, reservation of rights concerns, policy interpretation issues, or state that none are apparent from the file.",
+  liability_assessment: `liability_assessment: Provide a preliminary liability allocation using this format:\n---\nPRELIMINARY LIABILITY ALLOCATION (based on claim file text only)\n\nInsured: ___%\nClaimant: ___%\nOther/Unknown: ___%\n\nBasis:\n- [facts supporting allocation]\n- [facts that strengthen or weaken insured defense]\n\nIf insufficient information exists, state what is needed. Do not total over 100%. Do not invent facts. Use preliminary language.`,
+  damages_summary: "damages_summary: Summarize claimed damages, including medical bills, lost wages, property damage, general damages, demand, reserve, and any missing documentation.",
+  medical_timeline: "medical_timeline: Organize medical treatment chronologically by date, provider, diagnosis, treatment, gaps, inconsistencies, and missing records.",
+  litigation_status: "litigation_status: Describe legal status, lawsuit status, counsel, court, venue, deadlines, motions, or state that litigation is not shown in the file.",
+  venue_exposure_analysis: `venue_exposure_analysis: Evaluate venue/jurisdiction exposure using this format:\n---\nVENUE EXPOSURE ANALYSIS\n\nJurisdiction/Venue: [from file]\nVenue Risk Level: [Low / Moderate / High / Severe / Unknown]\n\nRelevant Factors:\n- [plaintiff or defense friendly tendencies only if supported]\n- [jury verdict risk]\n- [litigation cost risk]\n- [local procedural concerns]\n\nImpact on Claim:\n- [effect on value, settlement pressure, litigation strategy, or trial risk]\n\nDo not cite law or external verdicts unless they are in the file.`,
+  exposure_analysis: "exposure_analysis: Analyze policy limits, demand, BI exposure, PD exposure, excess or bad faith risk, worst-case scenario, mitigating factors, aggravating factors, and overall exposure rating.",
+  settlement_evaluation: "settlement_evaluation: Evaluate settlement posture, current demand, documented specials, strengths supporting settlement, weaknesses reducing value, and whether a negotiation range can be supported from file facts.",
+  strengths: "strengths: List key facts supporting the defense or insured position. Only use facts found in the claim file.",
+  weaknesses: "weaknesses: List key facts undermining the defense or insured position. Only use facts found in the claim file.",
+  red_flags: "red_flags: List inconsistencies, fraud indicators, coverage issues, litigation risks, investigation gaps, or state that none are apparent.",
+  missing_information: "missing_information: List all missing information needed for a complete review and explain why each item matters.",
+  recommended_next_steps: "recommended_next_steps: Provide numbered, actionable adjuster recommendations while separating facts from recommendations.",
+  suggested_follow_up_questions: "suggested_follow_up_questions: Provide investigative questions about liability, coverage, damages, evidence, strategy, and missing documentation.",
+  overall_claim_assessment: "overall_claim_assessment: Provide claim severity, complexity, key takeaways, primary risks, primary opportunities, recommended handling, reserve consideration, and summary statement.",
+  supervisor_review: `supervisor_review: Provide a manager-level summary using this format:\n---\nSUPERVISOR REVIEW\n\nCoverage: [Clear / Issues Present / Unknown]\nLiability: [brief preliminary allocation]\nDamages: [Low / Moderate / High / Severe / Unknown]\nVenue: [Low / Moderate / High / Severe / Unknown]\nSettlement: [supported position or insufficient information]\nRecommended Action:\n- [file-specific recommendation]\nAuthority Consideration: [whether authority can be evaluated and what is missing]`,
+  comparative_verdict_intelligence: `comparative_verdict_data: Generate a structured JSON object for comparative verdict intelligence. This is decision support only, not legal advice. Do not invent specific verdicts or settlements. If no comparable data exists, say so. Include exposure_snapshot, why_comparables_matter, similarity_breakdown, top_comparable_cases, valuation_drivers, recommended_considerations, comparison_quality_assessment, defense_perspective, and plaintiff_perspective. Use careful language such as "consider reviewing" and "may warrant further review." Never say "settle for" or "this claim is worth."`,
 };
+
+const CLAIM_KNOWLEDGE_INSTRUCTIONS = `
+Also always create claim_knowledge: a structured JSON object representing the internal Shared Claim Knowledge Layer. It must be based only on claim file text and entered form fields. Use empty strings, empty arrays, or "Unknown" when facts are unavailable. Include:
+- claim_identity: { claim_name, claim_number, date_of_loss, jurisdiction, line_of_business, status }
+- parties: array of { name, role, organization, relationship_to_claim, confidence }
+- policy: { policy_type, policy_number, limits, deductible_or_sir, coverage_status, exclusions_or_issues, confidence }
+- loss_facts: { loss_description, location, mechanism_of_loss, alleged_negligence, known_disputes, confidence }
+- injuries: array of { claimant, injury, body_part, severity, treatment_status, causation_notes, confidence }
+- damages: { medical_bills, lost_wages, property_damage, demand_amount, reserve_amount, other_damages, confidence }
+- timeline: array of { date, event_type, description, source_document, confidence }
+- evidence: array of { item, evidence_type, supports, weakens, source_document, confidence }
+- liability_factors: array of { factor, impact, explanation, confidence }
+- coverage_factors: array of { factor, impact, explanation, confidence }
+- venue_factors: array of { factor, impact, explanation, confidence }
+- missing_information: array of { item, category, why_it_matters, priority }
+- conflicts: array of { conflict, documents_or_sources, impact, needs_follow_up }
+- confidence: { overall, liability, coverage, damages, venue, explanation }
+`;
+
+const buildClaimKnowledgeSchema = () => ({
+  type: "object",
+  properties: {
+    claim_identity: { type: "object" },
+    parties: { type: "array", items: { type: "object" } },
+    policy: { type: "object" },
+    loss_facts: { type: "object" },
+    injuries: { type: "array", items: { type: "object" } },
+    damages: { type: "object" },
+    timeline: { type: "array", items: { type: "object" } },
+    evidence: { type: "array", items: { type: "object" } },
+    liability_factors: { type: "array", items: { type: "object" } },
+    coverage_factors: { type: "array", items: { type: "object" } },
+    venue_factors: { type: "array", items: { type: "object" } },
+    missing_information: { type: "array", items: { type: "object" } },
+    conflicts: { type: "array", items: { type: "object" } },
+    confidence: { type: "object" },
+  },
+});
+
+const buildComparativeVerdictSchema = () => ({
+  type: "object",
+  properties: {
+    exposure_snapshot: { type: "object" },
+    why_comparables_matter: { type: "string" },
+    similarity_breakdown: { type: "array", items: { type: "object" } },
+    top_comparable_cases: { type: "array", items: { type: "object" } },
+    valuation_drivers: { type: "object" },
+    recommended_considerations: { type: "array", items: { type: "object" } },
+    comparison_quality_assessment: { type: "object" },
+    defense_perspective: { type: "string" },
+    plaintiff_perspective: { type: "string" },
+  },
+});
 
 export default function NewClaimReview() {
   const navigate = useNavigate();
@@ -226,7 +145,10 @@ export default function NewClaimReview() {
 
   const analyzeAndSave = useMutation({
     mutationFn: async () => {
-      logAuditEvent("claim_review_create", { relatedClaimId: null, metadata: { claim_name: form.claim_name, claim_number: form.claim_number } });
+      logAuditEvent("claim_review_create", {
+        relatedClaimId: null,
+        metadata: { claim_name: form.claim_name, claim_number: form.claim_number },
+      });
 
       const review = await base44.entities.ClaimReview.create({
         ...form,
@@ -234,32 +156,32 @@ export default function NewClaimReview() {
         status: "analyzing",
       });
 
-      logAuditEvent("document_upload", { relatedClaimId: review.id, metadata: { document_count: uploadedDocuments.filter((d) => d.status === "processed").length } });
+      const processedDocuments = uploadedDocuments.filter((d) => d.status === "processed");
+      logAuditEvent("document_upload", {
+        relatedClaimId: review.id,
+        metadata: { document_count: processedDocuments.length },
+      });
 
       const sectionInstructions = selectedSections
         .map((key) => SECTION_PROMPTS[key])
         .filter(Boolean)
         .join("\n\n");
 
-      const docCount = uploadedDocuments.filter((d) => d.status === "processed").length;
-      const docSummaryLines = uploadedDocuments
-        .filter((d) => d.status === "processed")
+      const docSummaryLines = processedDocuments
         .map((d) => `- ${d.name} (${d.documentType || d.mimeType})`)
         .join("\n");
 
-      const prompt = `You are a professional insurance claims review assistant. Analyze the following claim file package and produce a structured claim review.
+      const prompt = `You are ClaimIntel, a professional insurance claims intelligence assistant. Analyze the claim file package and produce a structured claim review plus an internal Shared Claim Knowledge Layer.
 
 IMPORTANT RULES:
-- Only use facts found in the claim file text provided below. Do NOT invent facts.
+- Only use facts found in the claim file text or entered form fields. Do NOT invent facts.
 - Do NOT provide legal advice or make unsupported jurisdictional assumptions.
-- If a selected section cannot be completed due to missing information, include the section and clearly state what is missing.
-- Clearly separate factual findings from recommendations.
-- Use professional insurance claims language throughout.
-- Reference "Based on claim file text provided" where appropriate.
-- Preserve all formatting instructions in section prompts exactly.
-- Use information from ALL uploaded documents. Do NOT duplicate information found in multiple documents.
-- Flag any conflicting information between documents.
-- Identify missing records that would normally be expected in a claim file of this type.
+- If a selected section cannot be completed due to missing information, include the section and state what is missing.
+- Separate factual findings from recommendations.
+- Use professional insurance claims language.
+- Use information from all uploaded documents. Do not duplicate facts repeated across documents.
+- Flag conflicts between documents.
+- Identify missing records normally expected in a claim file of this type.
 
 CLAIM DETAILS:
 Claim Name: ${form.claim_name}
@@ -275,26 +197,27 @@ ${form.reserve_amount ? `Reserve Amount: ${form.reserve_amount}` : ""}
 ${form.defense_counsel ? `Defense Counsel: ${form.defense_counsel}` : ""}
 ${form.reviewer_notes ? `Reviewer Notes: ${form.reviewer_notes}` : ""}
 
-${docCount > 0 ? `DOCUMENTS INCLUDED IN THIS PACKAGE (${docCount} document${docCount > 1 ? "s" : ""}):\n${docSummaryLines}` : ""}
+${processedDocuments.length > 0 ? `DOCUMENTS INCLUDED (${processedDocuments.length}):\n${docSummaryLines}` : ""}
 
 CLAIM FILE TEXT:
 ${form.claim_file_text}
 
-GENERATE ONLY THE FOLLOWING SECTIONS (leave others as empty string ""):
+GENERATE ONLY THE FOLLOWING REPORT SECTIONS. Leave non-selected report sections as empty strings:
 ${sectionInstructions}
 
 Also always include:
-- confidence_level: "High", "Medium", or "Low" based on completeness of the claim file
-- venue_risk_level: "Low", "Moderate", "High", "Severe", or "Unknown" — extract from venue analysis or infer from jurisdiction if possible
-- liability_allocation_summary: A single line like "Insured 60% / Claimant 40%" or "Insufficient information to allocate" based on liability assessment
-- readiness_score: A number 0-100 representing overall claim readiness for evaluation based on completeness of documentation, investigation, and required information
-- readiness_categories: An array of objects with {category, status} for each of: "Liability", "Coverage", "Investigation", "Medical Documentation", "Damages Documentation". Status must be one of: "Complete", "In Progress", "Needs Records", "Partial", "Not Started"
-- missing_requirements: An array of strings listing specific outstanding investigation items needed (e.g., "Obtain Recorded Statement", "Obtain Updated Medical Records", "Obtain Wage Documentation")
-- readiness_recommendation: A concise recommendation summarizing the highest-priority missing items and their potential impact on liability, exposure, and settlement evaluation
-
-Return JSON with keys: executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation, comparative_verdict_data (object or null if not requested)`;
+- confidence_level: "High", "Medium", or "Low" based on file completeness
+- venue_risk_level: "Low", "Moderate", "High", "Severe", or "Unknown"
+- liability_allocation_summary: a single line like "Insured 60% / Claimant 40%" or "Insufficient information to allocate"
+- readiness_score: number 0-100 based on completeness of documentation, investigation, and required information
+- readiness_categories: array of {category, status} for Liability, Coverage, Investigation, Medical Documentation, Damages Documentation
+- missing_requirements: array of specific outstanding investigation items
+- readiness_recommendation: concise recommendation summarizing highest-priority missing items and impact
+${CLAIM_KNOWLEDGE_INSTRUCTIONS}
+Return JSON with keys: claim_knowledge, executive_summary, coverage_summary, coverage_issues, liability_assessment, damages_summary, medical_timeline, litigation_status, venue_exposure_analysis, exposure_analysis, settlement_evaluation, strengths, weaknesses, red_flags, missing_information, recommended_next_steps, suggested_follow_up_questions, overall_claim_assessment, supervisor_review, confidence_level, venue_risk_level, liability_allocation_summary, readiness_score, readiness_categories, missing_requirements, readiness_recommendation, comparative_verdict_data`;
 
       const schemaProps = {
+        claim_knowledge: buildClaimKnowledgeSchema(),
         executive_summary: { type: "string" },
         coverage_summary: { type: "string" },
         coverage_issues: { type: "string" },
@@ -317,103 +240,10 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         venue_risk_level: { type: "string" },
         liability_allocation_summary: { type: "string" },
         readiness_score: { type: "number" },
-        readiness_categories: { type: "array", items: { type: "object", properties: { category: { type: "string" }, status: { type: "string" } } } },
+        readiness_categories: { type: "array", items: { type: "object" } },
         missing_requirements: { type: "array", items: { type: "string" } },
         readiness_recommendation: { type: "string" },
-        comparative_verdict_data: {
-          type: "object",
-          properties: {
-            exposure_snapshot: {
-              type: "object",
-              properties: {
-                expected_verdict_range: { type: "string" },
-                expected_settlement_range: { type: "string" },
-                median_comparable_verdict: { type: "string" },
-                median_comparable_settlement: { type: "string" },
-                comparable_cases_found: { type: "number" },
-                comparison_quality: { type: "string" }
-              }
-            },
-            why_comparables_matter: { type: "string" },
-            similarity_breakdown: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  category: { type: "string" },
-                  level: { type: "string" },
-                  explanation: { type: "string" }
-                }
-              }
-            },
-            top_comparable_cases: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  jurisdiction: { type: "string" },
-                  case_type: { type: "string" },
-                  similarity_score: { type: "number" },
-                  verdict_or_settlement: { type: "string" },
-                  key_injuries: { type: "string" },
-                  treatment: { type: "string" },
-                  liability_facts: { type: "string" },
-                  key_similarities: { type: "string" },
-                  key_differences: { type: "string" },
-                  why_this_case_matters: { type: "string" }
-                }
-              }
-            },
-            valuation_drivers: {
-              type: "object",
-              properties: {
-                upward: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      factor: { type: "string" },
-                      rating: { type: "string" },
-                      explanation: { type: "string" }
-                    }
-                  }
-                },
-                downward: {
-                  type: "array",
-                  items: {
-                    type: "object",
-                    properties: {
-                      factor: { type: "string" },
-                      rating: { type: "string" },
-                      explanation: { type: "string" }
-                    }
-                  }
-                }
-              }
-            },
-            recommended_considerations: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  item: { type: "string" },
-                  language: { type: "string" }
-                }
-              }
-            },
-            comparison_quality_assessment: {
-              type: "object",
-              properties: {
-                rating: { type: "string" },
-                supporting_reasons: { type: "string" },
-                missing_information: { type: "string" },
-                warnings: { type: "string" }
-              }
-            },
-            defense_perspective: { type: "string" },
-            plaintiff_perspective: { type: "string" }
-          }
-        },
+        comparative_verdict_data: buildComparativeVerdictSchema(),
       };
 
       const result = await base44.integrations.Core.InvokeLLM({
@@ -423,6 +253,7 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
 
       await base44.entities.ClaimReview.update(review.id, {
         ...result,
+        claim_knowledge: result.claim_knowledge ? JSON.stringify(result.claim_knowledge) : "",
         readiness_categories: JSON.stringify(result.readiness_categories || []),
         missing_requirements: JSON.stringify(result.missing_requirements || []),
         comparative_verdict_data: result.comparative_verdict_data ? JSON.stringify(result.comparative_verdict_data) : "",
@@ -430,7 +261,6 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
       });
 
       logAuditEvent("report_generation", { relatedClaimId: review.id, metadata: { success: true } });
-
       return review.id;
     },
     onSuccess: (id) => navigate(`/review/${id}`),
@@ -456,13 +286,7 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
       </div>
 
       {showBetaElements && <BetaBanner />}
-
-      {showBetaElements && (
-        <div className="flex justify-center">
-          <BetaUsageIndicator />
-        </div>
-      )}
-
+      {showBetaElements && <div className="flex justify-center"><BetaUsageIndicator /></div>}
       <DisclaimerBanner />
 
       <div className="flex justify-end">
@@ -472,11 +296,8 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         </Button>
       </div>
 
-      {/* Claim Info */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">Claim Information</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-4"><CardTitle className="text-base">Claim Information</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -495,25 +316,20 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
               <Label className="text-xs font-medium">Jurisdiction *</Label>
               <Select value={form.jurisdiction} onValueChange={(v) => updateField("jurisdiction", v)}>
                 <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                <SelectContent>
-                  {STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5 md:col-span-2">
               <Label className="text-xs font-medium">Line of Business *</Label>
               <Select value={form.line_of_business} onValueChange={(v) => updateField("line_of_business", v)}>
                 <SelectTrigger><SelectValue placeholder="Select line of business" /></SelectTrigger>
-                <SelectContent>
-                  {LINES_OF_BUSINESS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                </SelectContent>
+                <SelectContent>{LINES_OF_BUSINESS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
               </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Claim Overview Details */}
       <Card className="shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">Claim Overview Details</CardTitle>
@@ -549,38 +365,19 @@ Return JSON with keys: executive_summary, coverage_summary, coverage_issues, lia
         </CardContent>
       </Card>
 
-      {/* Document Uploader */}
-      <DocumentUploader
-        onTextChange={(text) => updateField("claim_file_text", text)}
-        onDocumentsChange={setUploadedDocuments}
-      />
-
-      {/* Section Selector */}
+      <DocumentUploader onTextChange={(text) => updateField("claim_file_text", text)} onDocumentsChange={setUploadedDocuments} />
       <SectionSelector selected={selectedSections} onChange={setSelectedSections} />
 
-      {/* Reviewer Notes */}
       <Card className="shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base">Reviewer Notes (Optional)</CardTitle>
-        </CardHeader>
+        <CardHeader className="pb-4"><CardTitle className="text-base">Reviewer Notes (Optional)</CardTitle></CardHeader>
         <CardContent>
-          <Textarea
-            value={form.reviewer_notes}
-            onChange={(e) => updateField("reviewer_notes", e.target.value)}
-            placeholder="Add any context or specific areas to focus on..."
-            className="min-h-[80px] text-sm"
-          />
+          <Textarea value={form.reviewer_notes} onChange={(e) => updateField("reviewer_notes", e.target.value)} placeholder="Add any context or specific areas to focus on..." className="min-h-[80px] text-sm" />
         </CardContent>
       </Card>
 
-      {/* Actions */}
       <div className="flex justify-end gap-3 pb-8">
         <Button variant="outline" onClick={() => navigate("/")}>Cancel</Button>
-        <Button
-          onClick={() => analyzeAndSave.mutate()}
-          disabled={!isValid || analyzeAndSave.isPending}
-          className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 min-w-[180px]"
-        >
+        <Button onClick={() => analyzeAndSave.mutate()} disabled={!isValid || analyzeAndSave.isPending} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 min-w-[180px]">
           {analyzeAndSave.isPending ? (
             <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Analyzing Claim...</>
           ) : (
