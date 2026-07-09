@@ -242,9 +242,17 @@ export default function NewClaimReview() {
     "other": [],
   };
 
+  const MIN_CLAIM_TEXT_LENGTH = 200;
+
   const detectFieldConflicts = () => {
-    const text = (form.claim_file_text || "").toLowerCase();
-    if (!text.trim()) return [];
+    const rawText = (form.claim_file_text || "").trim();
+    if (rawText.length < MIN_CLAIM_TEXT_LENGTH) return [];
+
+    // If the only content is the sample claim placeholder, skip — that's a known-good match.
+    const sampleText = (SAMPLE_CLAIM.claim_file_text || "").trim().toLowerCase();
+    if (rawText.toLowerCase() === sampleText) return [];
+
+    const text = rawText.toLowerCase();
     const conflicts = [];
 
     if (form.jurisdiction && !text.includes(form.jurisdiction.toLowerCase())) {
