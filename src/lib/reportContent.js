@@ -1,3 +1,5 @@
+import { APPLICATION_IDENTITY } from "@/config/applicationIdentity";
+
 // Shared report content definitions for carrier-style report template
 
 export const CARRIER_SECTIONS = [
@@ -67,7 +69,6 @@ export function getClaimOverview(review) {
     { label: "Reserve Amount", value: review.reserve_amount },
     { label: "Defense Counsel", value: review.defense_counsel },
     { label: "Venue Risk Level", value: review.venue_risk_level },
-    { label: "Confidence Level", value: review.confidence_level },
     { label: "Liability Allocation", value: review.liability_allocation_summary },
   ];
   return fields.filter((f) => f.value && String(f.value).trim());
@@ -96,4 +97,80 @@ export function getReadinessData(review) {
     missingRequirements,
     recommendation: review.readiness_recommendation,
   };
+}
+/**
+ * Creates the canonical report model used by the on-screen report, clipboard,
+ * and export adapters. Keeping this transformation in one place prevents the
+ * different output formats from silently drifting apart.
+ */
+export function buildReportModel(review) {
+  if (!review) return null;
+
+  const readiness = getReadinessData(review);
+  const hasReadiness = readiness?.score != null;
+  const sections = getActiveSections(review).map((section) => ({
+    ...section,
+    content: String(section.content || "").trim(),
+  }));
+
+  return {
+    identity: {
+      claimName: review.claim_name || "Untitled Claim",
+      claimNumber: review.claim_number || "N/A",
+      dateOfLoss: review.date_of_loss || "N/A",
+      jurisdiction: review.jurisdiction || "N/A",
+      lineOfBusiness: review.line_of_business || "N/A",
+    },
+    metadata: {
+      productName: APPLICATION_IDENTITY.productName,
+      platformVersion: APPLICATION_IDENTITY.version,
+      preparedBy: APPLICATION_IDENTITY.reportPreparedBy,
+      designedBy: APPLICATION_IDENTITY.designedBy,
+      founderTitle: APPLICATION_IDENTITY.founderTitle,
+      status: review.status || "unknown",
+      createdDate: review.created_date || null,
+      venueRiskLevel: review.venue_risk_level || null,
+      liabilityAllocation: review.liability_allocation_summary || null,
+    },
+    overview: getClaimOverview(review),
+    sections,
+    readiness: hasReadiness ? readiness : null,
+    reviewerNotes: review.reviewer_notes || "",
+  };
+}
+
+export function buildReportText(review) {
+  const model = buildReportModel(review);
+  if (!model) return "";
+
+  const lines = [
+    `${model.metadata.productName.toUpperCase()} — CLAIMS INTELLIGENCE REPORT`,
+    `Platform Version: ${model.metadata.platformVersion}`,
+    `Prepared by: ${model.metadata.preparedBy}`,
+    `Designed and engineered by: ${model.metadata.designedBy}`,
+    `Claim: ${model.identity.claimName}`,
+    `Claim #: ${model.identity.claimNumber}`,
+    "=".repeat(60),
+    "",
+  ];
+
+  if (model.overview.length) {
+    lines.push("## Claim Overview");
+    model.overview.forEach(({ label, value }) => lines.push(`${label}: ${value}`));
+    lines.push("");
+  }
+
+  model.sections.forEach((section) => {
+    lines.push(`## ${section.title}`, section.content, "");
+    if (section.key === "executive_summary" && model.readiness) {
+      lines.push("## Claim Readiness", `Overall Readiness: ${Math.round(model.readiness.score)}%`);
+      model.readiness.categories.forEach((item) => lines.push(`${item.category}: ${item.status}`));
+      model.readiness.missingRequirements.forEach((item) => lines.push(`Missing: ${item}`));
+      if (model.readiness.recommendation) lines.push(`Recommendation: ${model.readiness.recommendation}`);
+      lines.push("");
+    }
+  });
+
+  if (model.reviewerNotes) lines.push("## Reviewer Notes", model.reviewerNotes, "");
+  return lines.join("\n").trim();
 }

@@ -1,7 +1,6 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
-import { getActiveSections, getClaimOverview, getReadinessData } from "./reportContent";
-import { getComparativeVerdictData, serializeComparativeVerdictText } from "./comparativeVerdictContent";
+import { buildReportModel, buildReportText } from "./reportContent";
 
 function nowFormatted() {
   return format(new Date(), "MMMM d, yyyy 'at' h:mm a");
@@ -43,8 +42,9 @@ function markdownToHtml(text) {
 
 // ====================== PDF EXPORT ======================
 export function exportAsPDF(review) {
-  const sections = getActiveSections(review);
-  const overview = getClaimOverview(review);
+  const reportModel = buildReportModel(review);
+  const sections = reportModel.sections;
+  const overview = reportModel.overview;
 
   const doc = new jsPDF({ unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
@@ -73,10 +73,8 @@ export function exportAsPDF(review) {
     drawArc(6 * scale, 13, 148, 136); // inner — teal
   };
 
-  const readiness = getReadinessData(review);
-  const hasReadiness = readiness && readiness.score != null;
-  const comparativeData = getComparativeVerdictData(review);
-  const hasComparativeVerdict = comparativeData !== null;
+  const readiness = reportModel.readiness;
+  const hasReadiness = readiness != null;
 
   const renderItems = [];
   sections.forEach((s) => {
@@ -85,9 +83,6 @@ export function exportAsPDF(review) {
       renderItems.push({ type: "readiness", title: "Claim Readiness", data: readiness });
     }
   });
-  if (hasComparativeVerdict) {
-    renderItems.push({ type: "comparative_verdict", title: "Comparative Verdict Intelligence", data: comparativeData });
-  }
 
   const tocItems = [];
   if (overview.length > 0) tocItems.push({ title: "Claim Overview", page: 0 });
@@ -192,7 +187,6 @@ export function exportAsPDF(review) {
     `Report Generated: ${nowFormatted()}`,
     `Prepared by: ClaimIntel AI`,
   ];
-  if (review.confidence_level) meta.push(`Confidence Level: ${review.confidence_level}`);
   if (review.venue_risk_level) meta.push(`Venue Risk Level: ${review.venue_risk_level}`);
   if (review.liability_allocation_summary) meta.push(`Liability Allocation: ${review.liability_allocation_summary}`);
   meta.forEach((line) => {
@@ -263,13 +257,7 @@ export function exportAsPDF(review) {
       if (r.categories && r.categories.length > 0) {
         addBodyText("Category Breakdown:");
         r.categories.forEach((cat) => {
-          if (typeof cat === "string") {
-            addBodyText(`  ${cat}`);
-          } else {
-            const label = cat.category || "Category";
-            const status = cat.status || "Unknown";
-            addBodyText(`  ${label}: ${status}`);
-          }
+          addBodyText(`  ${cat.category}: ${cat.status}`);
         });
       }
       if (r.missingRequirements && r.missingRequirements.length > 0) {
@@ -282,9 +270,6 @@ export function exportAsPDF(review) {
         addBodyText("AI Recommendation:");
         addBodyText(r.recommendation);
       }
-    } else if (item.type === "comparative_verdict") {
-      addBodyText("Decision support only — final evaluation remains with the adjuster. Not legal advice.");
-      addBodyText(serializeComparativeVerdictText(item.data));
     } else {
       addBodyText(item.content);
     }
@@ -323,24 +308,22 @@ export function exportAsPDF(review) {
 
 // ====================== WORD EXPORT ======================
 export function exportAsWord(review) {
-  const sections = getActiveSections(review);
-  const overview = getClaimOverview(review);
+  const reportModel = buildReportModel(review);
+  const sections = reportModel.sections;
+  const overview = reportModel.overview;
 
   const overviewRows = overview
     .map((f) => `<tr><td class="lbl">${f.label}</td><td>${f.value}</td></tr>`)
     .join("");
 
-  const readiness = getReadinessData(review);
-  const hasReadiness = readiness && readiness.score != null;
-  const comparativeData = getComparativeVerdictData(review);
-  const hasComparativeVerdict = comparativeData !== null;
+  const readiness = reportModel.readiness;
+  const hasReadiness = readiness != null;
   const tocItems = [];
   if (overview.length > 0) tocItems.push("Claim Overview");
   sections.forEach((s) => {
     tocItems.push(s.title);
     if (hasReadiness && s.key === "executive_summary") tocItems.push("Claim Readiness");
   });
-  if (hasComparativeVerdict) tocItems.push("Comparative Verdict Intelligence");
   const tocHtml = tocItems.length > 3
     ? `<h2>Table of Contents</h2><ol>${tocItems.map((t) => `<li>${t}</li>`).join("")}</ol>`
     : "";
@@ -351,11 +334,7 @@ export function exportAsWord(review) {
     if (r.categories && r.categories.length > 0) {
       html += `<p><strong>Category Breakdown:</strong></p>`;
       r.categories.forEach((cat) => {
-        if (typeof cat === "string") {
-          html += `<div style="margin-left:20px;">\u2022 ${cat}</div>`;
-        } else {
-          html += `<div style="margin-left:20px;">\u2022 ${cat.category || "Category"}: ${cat.status || "Unknown"}</div>`;
-        }
+        html += `<div style="margin-left:20px;">\u2022 ${cat.category}: ${cat.status}</div>`;
       });
     }
     if (r.missingRequirements && r.missingRequirements.length > 0) {
@@ -380,10 +359,6 @@ export function exportAsWord(review) {
     })
     .join("");
 
-  const comparativeHtml = hasComparativeVerdict
-    ? `<h2>Comparative Verdict Intelligence</h2><p style="font-size:9pt;color:#888;font-style:italic;">Decision support only — final evaluation remains with the adjuster. Not legal advice.</p>${markdownToHtml(serializeComparativeVerdictText(comparativeData))}`
-    : "";
-
   const metaLines = [
     `<p><strong>Claim Number:</strong> ${review.claim_number || "N/A"}</p>`,
     `<p><strong>Date of Loss:</strong> ${review.date_of_loss || "N/A"}</p>`,
@@ -392,7 +367,6 @@ export function exportAsWord(review) {
     `<p><strong>Report Generated:</strong> ${nowFormatted()}</p>`,
     `<p><strong>Prepared by:</strong> ClaimIntel AI</p>`,
   ];
-  if (review.confidence_level) metaLines.push(`<p><strong>Confidence Level:</strong> ${review.confidence_level}</p>`);
   if (review.venue_risk_level) metaLines.push(`<p><strong>Venue Risk Level:</strong> ${review.venue_risk_level}</p>`);
   if (review.liability_allocation_summary) metaLines.push(`<p><strong>Liability Allocation:</strong> ${review.liability_allocation_summary}</p>`);
 
@@ -439,7 +413,6 @@ ol { font-size: 11pt; color: #444; }
 ${tocHtml}
 ${overview.length > 0 ? `<h2>Claim Overview</h2><table class="ov">${overviewRows}</table>` : ""}
 ${sectionHtml}
-${comparativeHtml}
 <div class="footer">Generated with ClaimIntel Beta — This report is for educational and portfolio purposes only. Not legal advice.</div>
 </div>
 </body>
@@ -456,90 +429,8 @@ ${comparativeHtml}
 
 // ====================== TEXT EXPORT ======================
 export function exportAsText(review) {
-  const sections = getActiveSections(review);
-  const overview = getClaimOverview(review);
-  const readiness = getReadinessData(review);
-  const hasReadiness = readiness && readiness.score != null;
-  const comparativeData = getComparativeVerdictData(review);
-  const hasComparativeVerdict = comparativeData !== null;
-  const sep = "=".repeat(60);
-
-  let text = `${sep}\n`;
-  text += "CLAIMINTEL — CLAIMS INTELLIGENCE REPORT\n";
-  text += `${sep}\n\n`;
-  text += `Claim Name: ${review.claim_name || "N/A"}\n`;
-  text += `Claim Number: ${review.claim_number || "N/A"}\n`;
-  text += `Date of Loss: ${review.date_of_loss || "N/A"}\n`;
-  text += `Jurisdiction: ${review.jurisdiction || "N/A"}\n`;
-  text += `Line of Business: ${review.line_of_business || "N/A"}\n`;
-  text += `Report Generated: ${nowFormatted()}\n`;
-  text += `Prepared by: ClaimIntel AI\n`;
-  text += `Smarter Claims. Better Decisions.\n`;
-  if (review.confidence_level) text += `Confidence Level: ${review.confidence_level}\n`;
-  if (review.venue_risk_level) text += `Venue Risk Level: ${review.venue_risk_level}\n`;
-  if (review.liability_allocation_summary) text += `Liability Allocation: ${review.liability_allocation_summary}\n`;
-  text += `\nGenerated with ClaimIntel Beta\n`;
-
-  if (overview.length > 0) {
-    text += `\n${sep}\nCLAIM OVERVIEW\n${sep}\n\n`;
-    overview.forEach((f) => {
-      text += `  ${f.label}: ${f.value}\n`;
-    });
-  }
-
-  if (sections.length > 3) {
-    text += `\n${sep}\nTABLE OF CONTENTS\n${sep}\n\n`;
-    let num = 1;
-    if (overview.length > 0) text += `  ${num++}. Claim Overview\n`;
-    sections.forEach((s) => {
-      text += `  ${num++}. ${s.title}\n`;
-      if (hasReadiness && s.key === "executive_summary") {
-        text += `  ${num++}. Claim Readiness\n`;
-      }
-    });
-    if (hasComparativeVerdict) text += `  ${num++}. Comparative Verdict Intelligence\n`;
-  }
-
-  sections.forEach((s) => {
-    text += `\n${sep}\n${s.title.toUpperCase()}\n${sep}\n\n`;
-    text += `${stripMarkdown(s.content)}\n`;
-    if (hasReadiness && s.key === "executive_summary") {
-      text += `\n${sep}\nCLAIM READINESS\n${sep}\n\n`;
-      text += `Overall Readiness: ${Math.round(readiness.score)}%\n\n`;
-      if (readiness.categories && readiness.categories.length > 0) {
-        text += `Category Breakdown:\n`;
-        readiness.categories.forEach((cat) => {
-          if (typeof cat === "string") {
-            text += `  ${cat}\n`;
-          } else {
-            text += `  ${cat.category || "Category"}: ${cat.status || "Unknown"}\n`;
-          }
-        });
-        text += `\n`;
-      }
-      if (readiness.missingRequirements && readiness.missingRequirements.length > 0) {
-        text += `Missing Requirements:\n`;
-        readiness.missingRequirements.forEach((req) => {
-          text += `  \u2610 ${req}\n`;
-        });
-        text += `\n`;
-      }
-      if (readiness.recommendation) {
-        text += `AI Recommendation:\n${readiness.recommendation}\n`;
-      }
-    }
-  });
-
-  if (hasComparativeVerdict) {
-    text += `\n${sep}\nCOMPARATIVE VERDICT INTELLIGENCE\n${sep}\n\n`;
-    text += `Decision support only — final evaluation remains with the adjuster. Not legal advice.\n\n`;
-    text += `${serializeComparativeVerdictText(comparativeData)}\n`;
-  }
-
-  text += `\n${sep}\n`;
-  text += "DISCLAIMER: This report was generated by ClaimIntel Beta for educational and portfolio purposes only. Analysis is based solely on information contained within the uploaded claim file and supporting documents. It is not legal advice and should not be used for actual claims handling decisions.\n";
-
-  const blob = new Blob([text], { type: "text/plain" });
+  const text = buildReportText(review);
+  const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

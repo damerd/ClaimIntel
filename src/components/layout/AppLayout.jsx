@@ -20,6 +20,7 @@ import AdminTriggerLogo from "@/components/brand/AdminTriggerLogo";
 import { useAuth } from "@/lib/AuthContext";
 import { useAdminMode } from "@/lib/useAdminMode";
 import OrganizationContext from "@/components/enterprise/OrganizationContext";
+import FounderSignature from "@/components/brand/FounderSignature";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -129,7 +130,7 @@ export default function AppLayout() {
         {/* Footer */}
         <footer className="border-t border-border bg-card mt-auto">
           <div className="p-4 md:px-8 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">ClaimIntel © 2026 — Smarter Claims. Better Decisions.</p>
+            <FounderSignature />
             <div className="flex items-center gap-4 text-xs">
               <Link to="/privacy" className="text-muted-foreground hover:text-foreground flex items-center gap-1">
                 <ShieldCheck className="w-3 h-3" /> Privacy

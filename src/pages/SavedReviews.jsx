@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -30,6 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { deleteClaimReview, listClaimReviews } from "@/services/claimArchiveService";
 
 export default function SavedReviews() {
   const [search, setSearch] = useState("");
@@ -48,16 +48,20 @@ export default function SavedReviews() {
     }
   }, []);
 
-  const { data: reviews = [], isLoading } = useQuery({
+  const { data: reviews = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["claimReviews"],
-    queryFn: () => base44.entities.ClaimReview.list("-created_date", 100),
+    queryFn: listClaimReviews,
+    retry: 1,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClaimReview.delete(id),
+    mutationFn: deleteClaimReview,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
       toast.success("Report deleted");
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.userMessage || mutationError.message);
     },
   });
 
@@ -142,7 +146,13 @@ export default function SavedReviews() {
       </Card>
 
       {/* Results */}
-      {isLoading ? (
+      {isError ? (
+        <div className="text-center py-16 space-y-4">
+          <p className="font-medium">Reports unavailable</p>
+          <p className="text-sm text-muted-foreground">{error?.userMessage || error?.message}</p>
+          <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
         </div>

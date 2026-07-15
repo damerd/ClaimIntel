@@ -1,5 +1,4 @@
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,21 +11,21 @@ import {
 } from "lucide-react";
 import ReviewSection from "@/components/claims/ReviewSection";
 import StatusBadge from "@/components/claims/StatusBadge";
-import ConfidenceBadge from "@/components/claims/ConfidenceBadge";
 import ReviewBadges from "@/components/claims/ReviewBadges";
 import FollowUpAssistant from "@/components/claims/FollowUpAssistant";
 import ClaimOverviewTable from "@/components/claims/ClaimOverviewTable";
 import ReportExportMenu from "@/components/claims/ReportExportMenu";
 import ClaimIntelMark from "@/components/brand/ClaimIntelMark";
+import FounderSignature from "@/components/brand/FounderSignature";
+import { APPLICATION_IDENTITY } from "@/config/applicationIdentity";
 import ClaimReadinessPanel from "@/components/claims/ClaimReadinessPanel";
-import ComparativeVerdictIntelligence from "@/components/claims/ComparativeVerdictIntelligence";
 import { useUserRole } from "@/hooks/useUserRole";
-import { getComparativeVerdictData } from "@/lib/comparativeVerdictContent";
-import { getActiveSections } from "@/lib/reportContent";
+import { buildReportModel, buildReportText } from "@/lib/reportContent";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { archiveClaimReview, getClaimReview } from "@/services/claimArchiveService";
 
 const SECTION_ICONS = {
   executive_summary: FileText,
@@ -89,30 +88,27 @@ export default function ClaimReviewResults() {
   const { showBetaElements } = useUserRole();
   const [readinessOpen, setReadinessOpen] = useState(false);
 
-  const { data: review, isLoading } = useQuery({
+  const { data: review, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["claimReview", id],
-    queryFn: async () => {
-      const reviews = await base44.entities.ClaimReview.filter({ id });
-      return reviews[0];
-    },
+    queryFn: () => getClaimReview(id),
+    retry: 1,
   });
 
   const archiveMutation = useMutation({
-    mutationFn: () => base44.entities.ClaimReview.update(id, { status: "archived" }),
+    mutationFn: () => archiveClaimReview(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReview", id] });
+      queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
       toast.success("Report archived");
+    },
+    onError: (mutationError) => {
+      toast.error(mutationError.userMessage || mutationError.message);
     },
   });
 
   const copyToClipboard = () => {
     if (!review) return;
-    const sections = getActiveSections(review);
-    const text = sections
-      .map((s) => `## ${s.title}\n${s.content}`)
-      .join("\n\n");
-    const header = `CLAIMINTEL — CLAIMS INTELLIGENCE REPORT\nClaim: ${review.claim_name}\nClaim #: ${review.claim_number}\n${"=".repeat(60)}\n\n`;
-    navigator.clipboard.writeText(header + text);
+    navigator.clipboard.writeText(buildReportText(review));
     toast.success("Copied to clipboard", { description: "Full report text has been copied." });
   };
 
@@ -120,6 +116,19 @@ export default function ClaimReviewResults() {
     return (
       <div className="flex items-center justify-center py-24">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-24 space-y-4">
+        <p className="font-medium">Report unavailable</p>
+        <p className="text-sm text-muted-foreground">{error?.userMessage || error?.message}</p>
+        <div className="flex justify-center gap-2">
+          <Button variant="outline" onClick={() => refetch()}>Try Again</Button>
+          <Link to="/saved-reviews"><Button variant="ghost">View Saved Reports</Button></Link>
+        </div>
       </div>
     );
   }
@@ -133,8 +142,8 @@ export default function ClaimReviewResults() {
     );
   }
 
-  const activeSections = getActiveSections(review);
-  const comparativeVerdictData = getComparativeVerdictData(review);
+  const reportModel = buildReportModel(review);
+  const activeSections = reportModel.sections;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12 relative">
@@ -181,12 +190,15 @@ export default function ClaimReviewResults() {
         <div className="flex items-center gap-3">
           <ClaimIntelMark size={32} variant="light" />
           <div>
-            <p className="font-bold text-lg tracking-tight">ClaimIntel</p>
+            <p className="font-bold text-lg tracking-tight">{APPLICATION_IDENTITY.productName}</p>
             <p className="text-xs text-primary-foreground/70">Claims Intelligence Report</p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-xs text-primary-foreground/70">Prepared by: ClaimIntel AI</p>
+          <p className="text-xs text-primary-foreground/70">Prepared by {APPLICATION_IDENTITY.reportPreparedBy}</p>
+          <p className="text-[10px] text-primary-foreground/60">{APPLICATION_IDENTITY.signature}</p>
+          <p className="text-[10px] text-primary-foreground/60">{APPLICATION_IDENTITY.founderTitle}</p>
+          <p className="text-[10px] text-primary-foreground/60">Version {APPLICATION_IDENTITY.version}</p>
           <p className="text-xs text-primary-foreground/70">
             {review.created_date ? format(new Date(review.created_date), "MMMM d, yyyy") : format(new Date(), "MMMM d, yyyy")}
           </p>
@@ -203,7 +215,6 @@ export default function ClaimReviewResults() {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3 flex-wrap">
-              <ConfidenceBadge level={review.confidence_level} />
               {review.venue_risk_level && (
                 <Badge variant="outline" className={`text-xs font-medium ${VENUE_RISK_COLORS[review.venue_risk_level] || VENUE_RISK_COLORS.Unknown}`}>
                   Venue: {review.venue_risk_level}
@@ -270,11 +281,6 @@ export default function ClaimReviewResults() {
         ))}
       </div>
 
-      {/* Comparative Verdict Intelligence */}
-      {comparativeVerdictData && (
-        <ComparativeVerdictIntelligence data={comparativeVerdictData} />
-      )}
-
       {/* Reviewer Notes */}
       {review.reviewer_notes && (
         <Card className="shadow-sm border-dashed">
@@ -306,6 +312,9 @@ export default function ClaimReviewResults() {
             Generated with ClaimIntel Beta
           </p>
         )}
+        <div className="flex justify-center py-1">
+          <FounderSignature compact />
+        </div>
         <p className="text-[11px] font-semibold text-muted-foreground/80">
           Smarter Claims. Better Decisions.
         </p>

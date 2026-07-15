@@ -194,18 +194,6 @@
     "readiness_recommendation": {
       "type": "string",
       "description": "AI recommendation for claim readiness"
-    },
-    "comparative_verdict_data": {
-      "type": "string",
-      "description": "JSON-serialized comparative verdict intelligence data"
-    },
-    "claim_knowledge": {
-      "type": "string",
-      "description": "JSON-serialized Shared Claim Knowledge Layer used internally by ClaimIntel. This field stores the structured claim intelligence object generated during claim analysis."
-    },
-    "validation_engine_data": {
-      "type": "string",
-      "description": "JSON-serialized Validation Engine results including document conflicts, missing evidence, confidence scoring, investigation gaps, and priority review flags."
     }
   },
   "required": [

@@ -1,12 +1,13 @@
 import { useState, useRef } from "react";
-import { base44 } from "@/api/base44Client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Upload, FileText, FileImage, File, X, CheckCircle2,
-  Loader2, AlertCircle, FolderOpen,
+  Loader2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { extractDocument, validateDocument } from "@/services/documentProcessingService";
+import { normalizeError } from "@/lib/appError";
 
 const ACCEPTED_TYPES = {
   "application/pdf": { ext: "PDF", icon: FileText, color: "text-red-500" },
@@ -73,13 +74,31 @@ export default function DocumentUploader({ onTextChange, onDocumentsChange }) {
   };
 
   const processFile = async (file) => {
+    try {
+      validateDocument(file);
+    } catch (error) {
+      const normalized = normalizeError(error, `Could not add ${file.name}.`);
+      toast.error("Document not accepted", { description: normalized.userMessage });
+      return;
+    }
+
     const docEntry = {
       id: crypto.randomUUID(),
       name: file.name,
-      mimeType: file.type || "text/plain",
+      mimeType: file.type,
       uploadedAt: new Date().toISOString(),
       status: "uploading",
       extractedText: "",
+      errorCode: null,
+    };
+
+    const updateDoc = (id, patch) => {
+      setDocuments((prev) => {
+        const next = prev.map((doc) => (doc.id === id ? { ...doc, ...patch } : doc));
+        onDocumentsChange?.(next);
+        rebuildCombinedText(next, manualText);
+        return next;
+      });
     };
 
     setDocuments((prev) => {
@@ -88,74 +107,14 @@ export default function DocumentUploader({ onTextChange, onDocumentsChange }) {
       return next;
     });
 
-    const updateDoc = (id, patch) => {
-      setDocuments((prev) => {
-        const next = prev.map((d) => (d.id === id ? { ...d, ...patch } : d));
-        onDocumentsChange?.(next);
-        rebuildCombinedText(next, manualText);
-        return next;
-      });
-    };
-
-    // Plain text — read directly
-    if (file.type === "text/plain") {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        updateDoc(docEntry.id, { status: "processed", extractedText: ev.target.result });
-      };
-      reader.onerror = () => updateDoc(docEntry.id, { status: "error" });
-      reader.readAsText(file);
-      return;
-    }
-
-    // All other types — upload then extract
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
       updateDoc(docEntry.id, { status: "extracting" });
-
-      const isImage = file.type === "image/jpeg" || file.type === "image/png";
-
-      if (isImage) {
-        // Use LLM vision for images
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `You are an OCR and document analysis tool. Extract all readable text from this image. If the image contains a document, preserve its structure. If little or no text is visible, state: "Limited text detected in this image. Description: [brief description of what the image appears to show]." Return only the extracted text, no commentary.`,
-          file_urls: [file_url],
-        });
-        updateDoc(docEntry.id, {
-          status: "processed",
-          extractedText: typeof result === "string" ? result : JSON.stringify(result),
-          statusLabel: "OCR Complete",
-        });
-      } else {
-        // PDF / DOCX / DOC — use ExtractDataFromUploadedFile
-        const extracted = await base44.integrations.Core.ExtractDataFromUploadedFile({
-          file_url,
-          json_schema: {
-            type: "object",
-            properties: {
-              full_text: { type: "string", description: "All readable text extracted from the document, preserving structure where possible." },
-              document_type: { type: "string", description: "Type of document if identifiable (e.g. demand letter, medical record, police report, etc.)" },
-            },
-          },
-        });
-
-        if (extracted.status === "success" && extracted.output) {
-          const text = extracted.output.full_text || JSON.stringify(extracted.output);
-          const docType = extracted.output.document_type;
-          updateDoc(docEntry.id, {
-            status: "processed",
-            extractedText: text,
-            documentType: docType || null,
-            statusLabel: "Processed",
-          });
-        } else {
-          updateDoc(docEntry.id, { status: "error" });
-          toast.error(`Could not extract text from ${file.name}`);
-        }
-      }
-    } catch (err) {
-      updateDoc(docEntry.id, { status: "error" });
-      toast.error(`Failed to process ${file.name}`);
+      const result = await extractDocument(file);
+      updateDoc(docEntry.id, { status: "processed", ...result });
+    } catch (error) {
+      const normalized = normalizeError(error, `ClaimIntel could not process ${file.name}.`);
+      updateDoc(docEntry.id, { status: "error", errorCode: normalized.code, errorMessage: normalized.userMessage });
+      toast.error("Document processing failed", { description: normalized.userMessage });
     }
   };
 
@@ -269,6 +228,9 @@ export default function DocumentUploader({ onTextChange, onDocumentsChange }) {
                         <AlertCircle className="w-3.5 h-3.5" />
                         Failed
                       </span>
+                    )}
+                    {doc.status === "error" && doc.errorMessage && (
+                      <span className="sr-only">{doc.errorMessage}</span>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); removeDocument(doc.id); }}

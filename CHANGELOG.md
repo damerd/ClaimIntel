@@ -1,56 +1,33 @@
-# Changelog
+# Change Log
 
-All notable changes to ClaimIntel will be documented in this file.
-
-This project follows a simple versioning structure:
-
-* **Major version**: Large product or architecture changes
-* **Minor version**: New features or meaningful workflow improvements
-* **Patch version**: Bug fixes, cleanup, copy updates, or small UI improvements
-
----
-
-## [0.1.0] - 2026-06
+## Milestone Two — Software Design and Engineering
 
 ### Added
-
-* Initial ClaimIntel application structure
-* AI-powered claim review workflow
-* Claim document upload support
-* Structured claim analysis results page
-* Liability analysis section
-* Coverage review section
-* Venue analysis section
-* Medical and damages analysis section
-* Claim readiness assessment
-* Missing information review
-* Supervisor review support
-* Follow-Up Assistant
-* PDF report export
-* Saved reviews page
-* User authentication workflow
-* Pricing page
-* Security page
-* Privacy policy page
-* Admin panel structure
-* GitHub repository connection
+- Claim review configuration module.
+- Claim review orchestration service.
+- Document processing service.
+- Saved review service.
+- Advisory validation summary and domain validation utility.
+- Standardized application error model.
+- Canonical report model and shared text representation.
+- Reusable founder signature component.
+- Architecture and enhancement documentation.
 
 ### Changed
+- Reduced responsibility and size of the new claim review page.
+- Updated report rendering and exports to use one data source.
+- Improved report loading, retry, archive, and deletion failure states.
+- Updated founder attribution to “Founder & Lead Software Engineer — Damien Dennis.”
 
-* Positioned ClaimIntel as a claims intelligence platform instead of a basic claim summarization tool
-* Updated product direction toward decision support, litigation risk analysis, and professional claim file documentation
+### Fixed
+- Corrected malformed duplicate uploader markup.
+- Added explicit oversized, unsupported, and unreadable-document messages.
+### Added
+- Centralized application identity and release version configuration.
+- Architecture Decision Record 001 documenting separation of claim-review responsibilities.
+- System workflow documentation for validation, processing, persistence, and reporting.
 
-### Removed
+### Changed
+- Standardized authorship as “Designed and engineered by Damien Dennis — Founder & Lead Software Engineer.”
+- Added platform version metadata to the report header and canonical report model.
 
-* Confidence Level references from the claim report workflow
-
-### Planned
-
-* Comparative Verdict Intelligence
-* Reserve Recommendation Engine
-* Settlement Intelligence
-* Investigation Recommendation Engine
-* Organization accounts
-* Supervisor dashboard
-* Role-based permissions
-* Claim outcome learning system

@@ -49,7 +49,6 @@ export default function FollowUpAssistant({ review }) {
 
     if (review.venue_risk_level) parts.push(`Venue Risk: ${review.venue_risk_level}`);
     if (review.liability_allocation_summary) parts.push(`Liability: ${review.liability_allocation_summary}`);
-    if (review.confidence_level) parts.push(`Confidence: ${review.confidence_level}`);
     parts.push("");
 
     SECTION_KEYS.forEach((key) => {
