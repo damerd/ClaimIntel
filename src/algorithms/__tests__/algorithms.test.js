@@ -118,15 +118,56 @@ test("missing required evidence reduces the readiness score", () => {
   const incomplete = validateClaimPackage({
     form: {
       ...completeForm,
+      claim_file_text: matchingText
+        .replace(/The policy provides[\s\S]*?combined single limit\./, "")
+        .replace(/The current demand is[^.]+\./, "")
+        .replace(/and the reserve is[^.]+\./, "")
+        .replace(/Medical bills and lost wages are being evaluated\./, ""),
       policy_limits: "",
       current_demand: "",
       reserve_amount: "",
-      defense_counsel: "",
     },
   });
 
   assert.ok(incomplete.readinessScore < complete.readinessScore);
-  assert.ok(incomplete.missingRequirements.length >= 4);
+  assert.ok(incomplete.missingRequirements.length >= 3);
+});
+
+test("document evidence prevents false missing-field warnings", () => {
+  const result = validateClaimPackage({
+    form: {
+      ...completeForm,
+      insured_name: "",
+      claimant_name: "",
+      policy_limits: "",
+      current_demand: "",
+      reserve_amount: "",
+    },
+  });
+
+  const missingFields = new Set(result.missingRequirements.map((issue) => issue.field));
+  assert.equal(missingFields.has("insured_name"), false);
+  assert.equal(missingFields.has("claimant_name"), false);
+  assert.equal(missingFields.has("policy_limits"), false);
+  assert.equal(missingFields.has("current_demand"), false);
+  assert.equal(missingFields.has("reserve_amount"), false);
+});
+
+test("a negative demand statement does not satisfy demand evidence", () => {
+  const result = validateClaimPackage({
+    form: {
+      ...completeForm,
+      claim_file_text: matchingText
+        .replace(/The current demand is[^.]+\./, "No demand has been received.")
+        .replace(/and the reserve is[^.]+\./, ""),
+      current_demand: "",
+    },
+  });
+
+  assert.equal(
+    result.missingRequirements.some((issue) => issue.field === "current_demand"),
+    true,
+  );
 });
 
 test("readiness score remains within zero and one hundred", () => {
