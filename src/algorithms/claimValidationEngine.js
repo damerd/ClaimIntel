@@ -50,6 +50,7 @@ const MISSING_REQUIREMENTS = [
     category: "Claim Identity",
     severity: "Medium",
     recommendation: "Confirm the insured entity before completing liability and coverage analysis.",
+    evidenceTerms: ["named insured", "insured driver", "insured vehicle", "insured"],
   },
   {
     field: "claimant_name",
@@ -57,6 +58,7 @@ const MISSING_REQUIREMENTS = [
     category: "Claim Identity",
     severity: "Medium",
     recommendation: "Confirm the claimant identity before completing damages and medical review.",
+    evidenceTerms: ["claimant information", "claimant name", "claimant"],
   },
   {
     field: "policy_limits",
@@ -64,6 +66,7 @@ const MISSING_REQUIREMENTS = [
     category: "Coverage",
     severity: "High",
     recommendation: "Obtain the declarations page or verified policy limits before evaluating exposure.",
+    evidenceTerms: ["policy limits", "combined single limit", "coverage limit"],
   },
   {
     field: "current_demand",
@@ -71,6 +74,7 @@ const MISSING_REQUIREMENTS = [
     category: "Damages Documentation",
     severity: "Low",
     recommendation: "Confirm whether a demand has been received and document the amount or status.",
+    evidenceTerms: ["current demand", "settlement demand", "written demand", "demand letter", "demand for"],
   },
   {
     field: "reserve_amount",
@@ -78,13 +82,7 @@ const MISSING_REQUIREMENTS = [
     category: "Damages Documentation",
     severity: "Low",
     recommendation: "Confirm the current reserve so the analysis can identify reserve-to-exposure gaps.",
-  },
-  {
-    field: "defense_counsel",
-    label: "Defense counsel",
-    category: "Litigation and Venue",
-    severity: "Low",
-    recommendation: "Confirm counsel assignment when the claim is in litigation.",
+    evidenceTerms: ["reserve history", "current reserve", "reserve increased", "reserve set", "reserve is"],
   },
 ];
 
@@ -184,7 +182,7 @@ function calculateBaseCategoryScores(form, index) {
 
   return new Map([
     ["Claim Identity", clampScore(identityFormScore + identityEvidenceScore)],
-    ["Coverage", clampScore((form.policy_limits ? 45 : 0) + coverageEvidence * 0.55)],
+    ["Coverage", clampScore((form.policy_limits ? 30 : 0) + coverageEvidence * 0.7)],
     ["Liability", clampScore(liabilityEvidence)],
     ["Medical Documentation", clampScore(medicalEvidence)],
     [
@@ -323,6 +321,16 @@ function validateIdentityFields(form, index, issueMap, queue) {
   }
 }
 
+function numericValuePresent(index, value) {
+  const expectedDigits = digitsOnly(value);
+  if (expectedDigits.length < 3) return true;
+
+  return index.sources.some((source) => {
+    const numericCandidates = String(source.text).match(/\$?\s*\d[\d,]*(?:\.\d{1,2})?/g) ?? [];
+    return numericCandidates.some((candidate) => digitsOnly(candidate) === expectedDigits);
+  });
+}
+
 function validateFinancialFields(form, index, issueMap, queue) {
   const financialFields = [
     ["policy_limits", "Policy limits", "Coverage", "High"],
@@ -330,13 +338,10 @@ function validateFinancialFields(form, index, issueMap, queue) {
     ["reserve_amount", "Reserve amount", "Damages Documentation", "Medium"],
   ];
 
-  const indexedDigits = digitsOnly(index.combinedNormalizedText);
-
   for (const [field, label, category, severity] of financialFields) {
     const value = form[field];
     if (!value) continue;
-    const digits = digitsOnly(value);
-    if (digits.length >= 3 && !indexedDigits.includes(digits)) {
+    if (!numericValuePresent(index, value)) {
       addIssue(issueMap, queue, buildIssue({
         id: `${field}-unsupported`,
         category,
@@ -350,9 +355,10 @@ function validateFinancialFields(form, index, issueMap, queue) {
   }
 }
 
-function addMissingRequirements(form, issueMap, queue) {
+function addMissingRequirements(form, index, issueMap, queue) {
   for (const requirement of MISSING_REQUIREMENTS) {
     if (form[requirement.field]) continue;
+    if (requirement.evidenceTerms?.some((term) => phrasePresent(index, term))) continue;
     addIssue(issueMap, queue, buildIssue({
       id: `missing-${requirement.field}`,
       type: "Missing Requirement",
@@ -402,7 +408,7 @@ export function validateClaimPackage({
   } else {
     validateIdentityFields(form, index, issueMap, issueQueue);
     validateFinancialFields(form, index, issueMap, issueQueue);
-    addMissingRequirements(form, issueMap, issueQueue);
+    addMissingRequirements(form, index, issueMap, issueQueue);
   }
 
   const issues = issueQueue.toSortedArray();
