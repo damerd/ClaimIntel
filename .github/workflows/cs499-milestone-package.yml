@@ -1,0 +1,63 @@
+name: CS499 Milestone Package
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out original artifact
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: Original_Artifact
+
+      - name: Check out enhanced artifact
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: Enhanced_Artifact
+
+      - name: Remove packaging-only workflow
+        run: |
+          rm -f Enhanced_Artifact/.github/workflows/cs499-milestone-package.yml
+          rmdir Enhanced_Artifact/.github/workflows 2>/dev/null || true
+          rmdir Enhanced_Artifact/.github 2>/dev/null || true
+
+      - name: Add submission manifest
+        run: |
+          cat > SUBMISSION_README.txt <<'EOF'
+          CS 499 Milestone Three: Algorithms and Data Structures
+          Student: Damien Dennis
+
+          Original_Artifact contains the ClaimIntel main-branch snapshot used before Enhancement Two.
+          Enhanced_Artifact contains the milestone3-algorithms implementation.
+
+          Run algorithm tests from Enhanced_Artifact with:
+          npm install
+          npm run test:algorithms
+
+          Enhancement documentation:
+          Enhanced_Artifact/docs/CS499_Milestone_Three_Algorithms.md
+          EOF
+
+      - name: Create submission ZIP
+        run: |
+          zip -r CS499_Milestone_Three_Technical_Artifacts.zip \
+            Original_Artifact Enhanced_Artifact SUBMISSION_README.txt \
+            -x '*/.git/*' '*/node_modules/*' '*/dist/*'
+
+      - name: Upload submission artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: CS499-Milestone-Three-Technical-Artifacts
+          path: CS499_Milestone_Three_Technical_Artifacts.zip
+          if-no-files-found: error
+          retention-days: 7
