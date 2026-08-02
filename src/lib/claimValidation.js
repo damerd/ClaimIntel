@@ -41,6 +41,12 @@ export const WRITABLE_CLAIM_FIELDS = Object.freeze([
   "deleted_at",
   "deletion_reason",
   "last_activity_at",
+  "confidence_level",
+  "venue_risk_level",
+  "liability_allocation_summary",
+  "readiness_score",
+  "readiness_recommendation",
+  "follow_up_messages",
 ]);
 
 const SENSITIVE_AUDIT_KEYS = new Set([
@@ -102,6 +108,15 @@ export function validateClaimReview(input = {}, { partial = false } = {}) {
     errors.push("date_of_loss must be a valid date");
   }
 
+  if (
+    input.readiness_score != null &&
+    (!Number.isFinite(Number(input.readiness_score)) ||
+      Number(input.readiness_score) < 0 ||
+      Number(input.readiness_score) > 100)
+  ) {
+    errors.push("readiness_score must be between 0 and 100");
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -158,6 +173,10 @@ export function buildClaimSnapshot(claim = {}) {
     "status",
     "record_status",
     "version",
+    "confidence_level",
+    "venue_risk_level",
+    "liability_allocation_summary",
+    "readiness_score",
   ];
 
   return trackedFields.reduce((snapshot, field) => {
