@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Upload, FileText, FileImage, File, X, CheckCircle2,
-  Loader2, AlertCircle, FolderOpen,
+  Loader2, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
