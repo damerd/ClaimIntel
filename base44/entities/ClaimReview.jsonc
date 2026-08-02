@@ -1,14 +1,22 @@
 {
   "name": "ClaimReview",
   "type": "object",
+  "title": "Claim Review",
+  "description": "Core claim metadata and lifecycle state. Generated analyses and documents are stored in related entities.",
   "properties": {
     "claim_name": {
       "type": "string",
+      "minLength": 1,
       "description": "Name or title of the claim"
     },
     "claim_number": {
       "type": "string",
-      "description": "Unique claim number"
+      "minLength": 3,
+      "description": "Display-formatted claim number"
+    },
+    "normalized_claim_number": {
+      "type": "string",
+      "description": "Uppercase alphanumeric claim number used for duplicate detection"
     },
     "date_of_loss": {
       "type": "string",
@@ -33,179 +41,111 @@
       ],
       "description": "Line of business"
     },
-    "insured_name": {
-      "type": "string",
-      "description": "Insured party name"
-    },
-    "claimant_name": {
-      "type": "string",
-      "description": "Claimant name"
-    },
-    "policy_limits": {
-      "type": "string",
-      "description": "Policy limits"
-    },
-    "current_demand": {
-      "type": "string",
-      "description": "Current settlement demand"
-    },
-    "reserve_amount": {
-      "type": "string",
-      "description": "Reserve amount"
-    },
-    "defense_counsel": {
-      "type": "string",
-      "description": "Assigned defense counsel"
-    },
+    "insured_name": { "type": "string" },
+    "claimant_name": { "type": "string" },
+    "policy_limits": { "type": "string" },
+    "current_demand": { "type": "string" },
+    "reserve_amount": { "type": "string" },
+    "defense_counsel": { "type": "string" },
     "claim_file_text": {
       "type": "string",
       "description": "Full text of the claim file"
     },
-    "reviewer_notes": {
-      "type": "string",
-      "description": "Optional notes from the reviewer"
-    },
+    "reviewer_notes": { "type": "string" },
     "selected_sections": {
       "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Sections selected for this review"
+      "items": { "type": "string" }
     },
     "status": {
       "type": "string",
-      "enum": [
-        "draft",
-        "analyzing",
-        "reviewed",
-        "archived"
-      ],
-      "default": "draft",
-      "description": "Current status of the review"
+      "enum": ["draft", "analyzing", "reviewed", "archived", "failed"],
+      "default": "draft"
     },
-    "executive_summary": {
-      "type": "string"
+    "record_status": {
+      "type": "string",
+      "enum": ["active", "deleted"],
+      "default": "active",
+      "description": "Application lifecycle state used for recoverable deletion"
     },
-    "coverage_summary": {
-      "type": "string"
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1
     },
-    "coverage_issues": {
-      "type": "string"
+    "deleted_at": {
+      "type": "string",
+      "description": "ISO timestamp recorded when a claim is soft-deleted"
     },
-    "liability_assessment": {
-      "type": "string"
+    "deletion_reason": {
+      "type": "string",
+      "maxLength": 500
     },
-    "damages_summary": {
-      "type": "string"
+    "last_activity_at": {
+      "type": "string",
+      "format": "date-time"
     },
+
+    "executive_summary": { "type": "string" },
+    "coverage_summary": { "type": "string" },
+    "coverage_issues": { "type": "string" },
+    "liability_assessment": { "type": "string" },
+    "damages_summary": { "type": "string" },
     "medical_treatment_summary": {
       "type": "string",
       "description": "Legacy medical treatment field"
     },
-    "medical_timeline": {
-      "type": "string",
-      "description": "Chronological medical treatment timeline"
-    },
-    "litigation_status": {
-      "type": "string"
-    },
-    "venue_exposure_analysis": {
-      "type": "string"
-    },
-    "exposure_analysis": {
-      "type": "string",
-      "description": "Overall exposure analysis"
-    },
-    "settlement_evaluation": {
-      "type": "string"
-    },
-    "strengths": {
-      "type": "string",
-      "description": "Defense strengths"
-    },
-    "weaknesses": {
-      "type": "string",
-      "description": "Defense weaknesses"
-    },
+    "medical_timeline": { "type": "string" },
+    "litigation_status": { "type": "string" },
+    "venue_exposure_analysis": { "type": "string" },
+    "exposure_analysis": { "type": "string" },
+    "settlement_evaluation": { "type": "string" },
+    "strengths": { "type": "string" },
+    "weaknesses": { "type": "string" },
     "strengths_and_weaknesses": {
       "type": "string",
       "description": "Legacy combined field"
     },
-    "red_flags": {
-      "type": "string"
-    },
-    "missing_information": {
-      "type": "string"
-    },
-    "recommended_next_steps": {
-      "type": "string"
-    },
-    "suggested_follow_up_questions": {
-      "type": "string",
-      "description": "Suggested questions for the adjuster"
-    },
-    "overall_claim_assessment": {
-      "type": "string",
-      "description": "Holistic claim assessment"
-    },
-    "supervisor_review": {
-      "type": "string"
-    },
+    "red_flags": { "type": "string" },
+    "missing_information": { "type": "string" },
+    "recommended_next_steps": { "type": "string" },
+    "suggested_follow_up_questions": { "type": "string" },
+    "overall_claim_assessment": { "type": "string" },
+    "supervisor_review": { "type": "string" },
     "venue_risk_level": {
       "type": "string",
-      "enum": [
-        "Low",
-        "Moderate",
-        "High",
-        "Severe",
-        "Unknown"
-      ],
-      "description": "Venue risk level"
+      "enum": ["Low", "Moderate", "High", "Severe", "Unknown"]
     },
-    "liability_allocation_summary": {
-      "type": "string",
-      "description": "Liability allocation percentages"
-    },
+    "liability_allocation_summary": { "type": "string" },
     "confidence_level": {
       "type": "string",
-      "enum": [
-        "High",
-        "Medium",
-        "Low"
-      ],
-      "description": "AI confidence level"
+      "enum": ["High", "Medium", "Low"]
     },
-    "follow_up_messages": {
-      "type": "string",
-      "description": "JSON-serialized follow-up conversation"
-    },
+    "follow_up_messages": { "type": "string" },
     "readiness_score": {
       "type": "number",
-      "description": "Overall claim readiness percentage 0-100"
+      "minimum": 0,
+      "maximum": 100
     },
     "readiness_categories": {
       "type": "string",
-      "description": "JSON array of {category, status} objects"
+      "description": "Legacy JSON array retained for existing reports"
     },
     "missing_requirements": {
       "type": "string",
-      "description": "JSON array of outstanding requirement strings"
+      "description": "Legacy JSON array retained for existing reports"
     },
-    "readiness_recommendation": {
-      "type": "string",
-      "description": "AI recommendation for claim readiness"
-    },
+    "readiness_recommendation": { "type": "string" },
     "comparative_verdict_data": {
       "type": "string",
-      "description": "JSON-serialized comparative verdict intelligence data"
+      "description": "Legacy JSON analysis field retained during migration"
     },
     "claim_knowledge": {
       "type": "string",
-      "description": "JSON-serialized Shared Claim Knowledge Layer used internally by ClaimIntel. This field stores the structured claim intelligence object generated during claim analysis."
+      "description": "Legacy JSON analysis field retained during migration"
     },
     "validation_engine_data": {
       "type": "string",
-      "description": "JSON-serialized Validation Engine results including document conflicts, missing evidence, confidence scoring, investigation gaps, and priority review flags."
+      "description": "Legacy JSON analysis field retained during migration"
     }
   },
   "required": [
@@ -220,38 +160,20 @@
     "create": null,
     "read": {
       "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
       ]
     },
     "update": {
       "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
       ]
     },
     "delete": {
       "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
       ]
     }
   }
