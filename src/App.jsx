@@ -19,6 +19,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard';
 import NewClaimReview from '@/pages/NewClaimReview';
 import ClaimReviewResults from '@/pages/ClaimReviewResults';
+import ClaimHistory from '@/pages/ClaimHistory';
 import SavedReviews from '@/pages/SavedReviews';
 import SettingsDisclaimer from '@/pages/SettingsDisclaimer';
 import Pricing from '@/pages/Pricing';
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<Dashboard />} />
           <Route path="/new-review" element={<NewClaimReview />} />
           <Route path="/review/:id" element={<ClaimReviewResults />} />
+          <Route path="/review/:id/history" element={<ClaimHistory />} />
           <Route path="/saved-reviews" element={<SavedReviews />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/documentation" element={<Documentation />} />

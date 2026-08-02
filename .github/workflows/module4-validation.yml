@@ -1,0 +1,119 @@
+name: Module 4 Database Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - module4-database
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run database-layer tests
+        run: npm run test:database
+
+      - name: Run lint checks
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+  package:
+    needs: validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out enhanced artifact
+        uses: actions/checkout@v4
+        with:
+          ref: module4-database
+          path: staging/CS499_Milestone4_Databases_Damien_Dennis/Enhanced_Artifact
+
+      - name: Check out frozen original artifact
+        uses: actions/checkout@v4
+        with:
+          ref: 048b99c3f75d88689533eceda44e7c7273baa556
+          path: staging/CS499_Milestone4_Databases_Damien_Dennis/Original_Artifact
+
+      - name: Assemble milestone submission package
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$GITHUB_WORKSPACE/staging/CS499_Milestone4_Databases_Damien_Dennis"
+          ORIGINAL_SHA=$(git -C "$ROOT/Original_Artifact" rev-parse HEAD)
+          ENHANCED_SHA=$(git -C "$ROOT/Enhanced_Artifact" rev-parse HEAD)
+
+          rm -rf "$ROOT/Original_Artifact/.git" "$ROOT/Enhanced_Artifact/.git"
+          mkdir -p "$ROOT/Database_Design" "$ROOT/Test_Evidence"
+
+          cp "$ROOT/Enhanced_Artifact/docs/milestone4-database-design.md" \
+            "$ROOT/Database_Design/milestone4-database-design.md"
+          cp "$ROOT/Enhanced_Artifact/scripts/test-database-layer.mjs" \
+            "$ROOT/Test_Evidence/test-database-layer.mjs"
+
+          cat > "$ROOT/README.md" <<EOF
+          # CS 499 Milestone Four — Databases
+
+          Student: Damien Dennis
+
+          This package contains the frozen original ClaimIntel artifact and the enhanced database artifact.
+
+          - Original artifact commit: $ORIGINAL_SHA
+          - Enhanced artifact commit: $ENHANCED_SHA
+          - Original_Artifact: source code before the database enhancement
+          - Enhanced_Artifact: complete enhanced source code
+          - Database_Design: architecture and design explanation
+          - Test_Evidence: executable database test script and validation summary
+
+          Validation commands:
+
+          ```bash
+          npm install
+          npm run test:database
+          npm run lint
+          npm run build
+          ```
+          EOF
+
+          cat > "$ROOT/Test_Evidence/validation-summary.txt" <<EOF
+          CS 499 MILESTONE FOUR VALIDATION SUMMARY
+          =======================================
+          Enhanced commit: $ENHANCED_SHA
+          GitHub Actions run: $GITHUB_RUN_ID
+
+          Automated checks required before packaging:
+          - Database-layer tests: PASS
+          - ESLint validation: PASS
+          - Production build: PASS
+
+          Database test coverage includes 13 assertions for validation,
+          controlled writes, audit-data minimization, analysis separation,
+          summary mirroring, and related document transformation.
+          EOF
+
+          cd "$GITHUB_WORKSPACE/staging"
+          zip -r "$GITHUB_WORKSPACE/CS499_Milestone4_Databases_Damien_Dennis.zip" \
+            "CS499_Milestone4_Databases_Damien_Dennis"
+
+      - name: Upload milestone ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: CS499-Milestone4-Databases-Damien-Dennis
+          path: CS499_Milestone4_Databases_Damien_Dennis.zip
+          if-no-files-found: error
+          retention-days: 30

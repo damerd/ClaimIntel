@@ -1,23 +1,29 @@
-import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Link, useSearchParams } from "react-router-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDeferredValue, useEffect, useState } from "react";
+import { format } from "date-fns";
+import {
+  ArrowRight,
+  Filter,
+  FolderOpen,
+  History,
+  Loader2,
+  RotateCcw,
+  Search,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  FolderOpen,
-  Search,
-  ArrowRight,
-  Trash2,
-  Filter,
-  Loader2,
-} from "lucide-react";
-import StatusBadge from "@/components/claims/StatusBadge";
-import BetaBanner from "@/components/claims/BetaBanner";
-import { format } from "date-fns";
-import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,12 +35,32 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
+import BetaBanner from "@/components/claims/BetaBanner";
+import StatusBadge from "@/components/claims/StatusBadge";
+import {
+  listClaimReviews,
+  restoreClaimReview,
+  softDeleteClaimReview,
+} from "@/services/claimReviewRepository";
+
+const LINES_OF_BUSINESS = [
+  "Commercial Auto",
+  "Personal Auto",
+  "General Liability",
+  "Workers Compensation",
+  "Property",
+  "Professional Liability",
+  "Product Liability",
+  "Other",
+];
 
 export default function SavedReviews() {
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [lineOfBusinessFilter, setLineOfBusinessFilter] = useState("all");
   const [monthFilter, setMonthFilter] = useState("all");
+  const [showDeleted, setShowDeleted] = useState(false);
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
@@ -44,84 +70,169 @@ export default function SavedReviews() {
     if (status) setStatusFilter(status);
     if (month === "current") {
       const now = new Date();
-      setMonthFilter(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+      setMonthFilter(
+        `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`
+      );
     }
-  }, []);
+  }, [searchParams]);
 
   const { data: reviews = [], isLoading } = useQuery({
-    queryKey: ["claimReviews"],
-    queryFn: () => base44.entities.ClaimReview.list("-created_date", 100),
+    queryKey: [
+      "claimReviews",
+      deferredSearch,
+      statusFilter,
+      lineOfBusinessFilter,
+      showDeleted,
+    ],
+    queryFn: () =>
+      listClaimReviews({
+        search: deferredSearch,
+        status: statusFilter,
+        lineOfBusiness: lineOfBusinessFilter,
+        includeDeleted: showDeleted,
+        limit: 100,
+      }),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.ClaimReview.delete(id),
+    mutationFn: (id) => softDeleteClaimReview(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
-      toast.success("Report deleted");
+      toast.success("Report moved to recycle bin", {
+        description: "Its database history remains available for recovery and auditing.",
+      });
+    },
+    onError: (error) => {
+      toast.error("Report could not be removed", {
+        description: error?.message || "Please try again.",
+      });
     },
   });
 
-  const filtered = reviews.filter((r) => {
-    const matchesSearch =
-      !search ||
-      r.claim_name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.claim_number?.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-    const matchesMonth = monthFilter === "all" || (() => {
-      if (!r.created_date) return false;
-      const d = new Date(r.created_date);
-      const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      return ym === monthFilter;
-    })();
-    return matchesSearch && matchesStatus && matchesMonth;
+  const restoreMutation = useMutation({
+    mutationFn: (id) => restoreClaimReview(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["claimReviews"] });
+      toast.success("Report restored");
+    },
+    onError: (error) => {
+      toast.error("Report could not be restored", {
+        description: error?.message || "Please try again.",
+      });
+    },
   });
 
-  // Build a list of unique year-month options from reviewed reviews
+  const visibleReviews = reviews.filter((review) =>
+    showDeleted
+      ? review.record_status === "deleted"
+      : review.record_status !== "deleted"
+  );
+
+  const filtered = visibleReviews.filter((review) => {
+    if (monthFilter === "all") return true;
+    if (!review.created_date) return false;
+    const date = new Date(review.created_date);
+    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    return yearMonth === monthFilter;
+  });
+
   const monthOptions = Array.from(
     new Set(
-      reviews
-        .filter((r) => r.status === "reviewed" && r.created_date)
-        .map((r) => {
-          const d = new Date(r.created_date);
-          return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      visibleReviews
+        .filter((review) => review.status === "reviewed" && review.created_date)
+        .map((review) => {
+          const date = new Date(review.created_date);
+          return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
         })
     )
   ).sort().reverse();
 
+  const toggleDeletedView = () => {
+    setShowDeleted((current) => !current);
+    setMonthFilter("all");
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">Claims Intelligence Reports</h1>
-        <p className="text-sm text-muted-foreground mt-1">Browse, search, and manage ClaimIntel analyses and claim intelligence reports.</p>
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl md:text-3xl font-bold tracking-tight">
+            {showDeleted ? "Recycle Bin" : "Claims Intelligence Reports"}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {showDeleted
+              ? "Review soft-deleted records, inspect their history, or restore them."
+              : "Browse, search, and manage ClaimIntel analyses and claim intelligence reports."}
+          </p>
+        </div>
+        <Button variant="outline" onClick={toggleDeletedView}>
+          {showDeleted ? (
+            <>
+              <FolderOpen className="w-4 h-4 mr-2" />
+              Active Reports
+            </>
+          ) : (
+            <>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Recycle Bin
+            </>
+          )}
+        </Button>
       </div>
 
       <BetaBanner />
 
-      {/* Filters */}
       <Card className="shadow-sm">
-        <CardContent className="p-4 flex flex-col md:flex-row items-stretch md:items-center gap-3">
+        <CardContent className="p-4 flex flex-col xl:flex-row items-stretch xl:items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search by claim name or number..."
+              placeholder="Search claims, claim numbers, insureds, or claimants..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               className="pl-9"
             />
           </div>
+
           <div className="flex items-center gap-2 flex-wrap">
             <Filter className="w-4 h-4 text-muted-foreground" />
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setMonthFilter("all"); }}>
+            <Select
+              value={statusFilter}
+              onValueChange={(value) => {
+                setStatusFilter(value);
+                setMonthFilter("all");
+              }}
+            >
               <SelectTrigger className="w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="analyzing">Analyzing</SelectItem>
                 <SelectItem value="reviewed">Reviewed</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select
+              value={lineOfBusinessFilter}
+              onValueChange={setLineOfBusinessFilter}
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="All Lines" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Lines</SelectItem>
+                {LINES_OF_BUSINESS.map((line) => (
+                  <SelectItem key={line} value={line}>
+                    {line}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             {statusFilter === "reviewed" && monthOptions.length > 0 && (
               <Select value={monthFilter} onValueChange={setMonthFilter}>
                 <SelectTrigger className="w-40">
@@ -129,10 +240,20 @@ export default function SavedReviews() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Months</SelectItem>
-                  {monthOptions.map((ym) => {
-                    const [year, month] = ym.split("-");
-                    const label = new Date(Number(year), Number(month) - 1).toLocaleString("default", { month: "long", year: "numeric" });
-                    return <SelectItem key={ym} value={ym}>{label}</SelectItem>;
+                  {monthOptions.map((yearMonth) => {
+                    const [year, month] = yearMonth.split("-");
+                    const label = new Date(
+                      Number(year),
+                      Number(month) - 1
+                    ).toLocaleString("default", {
+                      month: "long",
+                      year: "numeric",
+                    });
+                    return (
+                      <SelectItem key={yearMonth} value={yearMonth}>
+                        {label}
+                      </SelectItem>
+                    );
                   })}
                 </SelectContent>
               </Select>
@@ -141,7 +262,6 @@ export default function SavedReviews() {
         </CardContent>
       </Card>
 
-      {/* Results */}
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
           <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -149,11 +269,17 @@ export default function SavedReviews() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <FolderOpen className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
-          <p className="text-muted-foreground font-medium">No reports found</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {reviews.length === 0 ? "Run your first ClaimIntel analysis to get started." : "Try adjusting your filters."}
+          <p className="text-muted-foreground font-medium">
+            {showDeleted ? "Recycle bin is empty" : "No reports found"}
           </p>
-          {reviews.length === 0 && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {showDeleted
+              ? "Soft-deleted reports will appear here."
+              : visibleReviews.length === 0
+                ? "Run your first ClaimIntel analysis to get started."
+                : "Try adjusting your filters."}
+          </p>
+          {!showDeleted && visibleReviews.length === 0 && (
             <Link to="/new-review">
               <Button className="mt-4">Run Analysis</Button>
             </Link>
@@ -162,76 +288,80 @@ export default function SavedReviews() {
       ) : (
         <div className="space-y-3">
           {filtered.map((review) => (
-            <Card key={review.id} className="shadow-sm hover:shadow-md transition-shadow">
+            <Card
+              key={review.id}
+              className="shadow-sm hover:shadow-md transition-shadow"
+            >
               <CardContent className="p-5 flex items-center justify-between gap-4">
-                <Link to={`/review/${review.id}`} className="flex-1 min-w-0 group">
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
-                      {review.claim_name}
-                    </p>
-                    <StatusBadge status={review.status} />
-                    {review.venue_risk_level && review.venue_risk_level !== "Unknown" && (
-                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
-                        review.venue_risk_level === "Severe" ? "bg-red-50 text-red-700 border-red-200" :
-                        review.venue_risk_level === "High" ? "bg-orange-50 text-orange-700 border-orange-200" :
-                        review.venue_risk_level === "Moderate" ? "bg-yellow-50 text-yellow-700 border-yellow-200" :
-                        "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      }`}>
-                        Venue: {review.venue_risk_level}
-                      </span>
-                    )}
+                {showDeleted ? (
+                  <div className="flex-1 min-w-0">
+                    <ReviewDetails review={review} deleted />
                   </div>
-                  <div className="flex items-center gap-3 mt-1.5 flex-wrap">
-                    <span className="text-xs text-muted-foreground">{review.claim_number}</span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <span className="text-xs text-muted-foreground">{review.jurisdiction}</span>
-                    <span className="text-xs text-muted-foreground">•</span>
-                    <span className="text-xs text-muted-foreground">{review.line_of_business}</span>
-                    {review.created_date && (
-                      <>
-                        <span className="text-xs text-muted-foreground">•</span>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(review.created_date), "MMM d, yyyy")}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {review.liability_allocation_summary && (
-                    <p className="text-xs text-muted-foreground mt-1 italic">
-                      Liability: {review.liability_allocation_summary}
-                    </p>
-                  )}
-                </Link>
+                ) : (
+                  <Link
+                    to={`/review/${review.id}`}
+                    className="flex-1 min-w-0 group"
+                  >
+                    <ReviewDetails review={review} />
+                  </Link>
+                )}
+
                 <div className="flex items-center gap-2 shrink-0">
-                  <Link to={`/review/${review.id}`}>
-                    <Button variant="ghost" size="icon">
-                      <ArrowRight className="w-4 h-4" />
+                  <Link to={`/review/${review.id}/history`}>
+                    <Button variant="ghost" size="icon" title="View database history">
+                      <History className="w-4 h-4" />
                     </Button>
                   </Link>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Review</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete "{review.claim_name}". This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => deleteMutation.mutate(review.id)}
-                          className="bg-destructive text-destructive-foreground"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+
+                  {showDeleted ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => restoreMutation.mutate(review.id)}
+                      disabled={restoreMutation.isPending}
+                    >
+                      <RotateCcw className="w-4 h-4 mr-2" />
+                      Restore
+                    </Button>
+                  ) : (
+                    <>
+                      <Link to={`/review/${review.id}`}>
+                        <Button variant="ghost" size="icon">
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                      </Link>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Review</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will hide “{review.claim_name}” from active reports while
+                              preserving its database history for recovery and auditing.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteMutation.mutate(review.id)}
+                              className="bg-destructive text-destructive-foreground"
+                            >
+                              Move to Recycle Bin
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -239,5 +369,72 @@ export default function SavedReviews() {
         </div>
       )}
     </div>
+  );
+}
+
+function ReviewDetails({ review, deleted = false }) {
+  return (
+    <>
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <p className="font-medium text-sm group-hover:text-primary transition-colors truncate">
+          {review.claim_name}
+        </p>
+        <StatusBadge status={review.status} />
+        {deleted && (
+          <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200">
+            Deleted
+          </span>
+        )}
+        {review.venue_risk_level && review.venue_risk_level !== "Unknown" && (
+          <span
+            className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${
+              review.venue_risk_level === "Severe"
+                ? "bg-red-50 text-red-700 border-red-200"
+                : review.venue_risk_level === "High"
+                  ? "bg-orange-50 text-orange-700 border-orange-200"
+                  : review.venue_risk_level === "Moderate"
+                    ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+            }`}
+          >
+            Venue: {review.venue_risk_level}
+          </span>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+        <span className="text-xs text-muted-foreground">{review.claim_number}</span>
+        <span className="text-xs text-muted-foreground">•</span>
+        <span className="text-xs text-muted-foreground">{review.jurisdiction}</span>
+        <span className="text-xs text-muted-foreground">•</span>
+        <span className="text-xs text-muted-foreground">{review.line_of_business}</span>
+        {review.created_date && (
+          <>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground">
+              {format(new Date(review.created_date), "MMM d, yyyy")}
+            </span>
+          </>
+        )}
+        {review.version && (
+          <>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground">Version {review.version}</span>
+          </>
+        )}
+      </div>
+
+      {deleted && review.deleted_at && (
+        <p className="text-xs text-red-700 mt-1">
+          Deleted {format(new Date(review.deleted_at), "MMM d, yyyy h:mm a")}
+        </p>
+      )}
+
+      {review.liability_allocation_summary && (
+        <p className="text-xs text-muted-foreground mt-1 italic">
+          Liability: {review.liability_allocation_summary}
+        </p>
+      )}
+    </>
   );
 }
