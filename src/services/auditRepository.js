@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { rawBase44 } from "@/api/rawBase44Client";
 import { sanitizeAuditMetadata } from "@/lib/claimValidation";
 
 /**
@@ -16,13 +16,13 @@ export async function recordAuditEvent(
   } = {}
 ) {
   try {
-    const user = await base44.auth.me().catch(() => null);
+    const user = await rawBase44.auth.me().catch(() => null);
     const sanitizedMetadata = sanitizeAuditMetadata({
       ...metadata,
       ...(errorCode ? { error_code: errorCode } : {}),
     });
 
-    const record = await base44.entities.AuditLog.create({
+    const record = await rawBase44.entities.AuditLog.create({
       action,
       success,
       related_claim_id: relatedClaimId,
