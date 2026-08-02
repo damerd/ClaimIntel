@@ -1,14 +1,21 @@
-import { createClient } from '@base44/sdk';
-import { appParams } from '@/lib/app-params';
+import { rawBase44 } from "@/api/rawBase44Client";
+import { claimReviewEntityAdapter } from "@/api/claimReviewEntityAdapter";
 
-const { appId, token, functionsVersion, appBaseUrl } = appParams;
+const entities = new Proxy(rawBase44.entities, {
+  get(target, property, receiver) {
+    if (property === "ClaimReview") return claimReviewEntityAdapter;
+    return Reflect.get(target, property, receiver);
+  },
+});
 
-//Create a client with authentication required
-export const base44 = createClient({
-  appId,
-  token,
-  functionsVersion,
-  serverUrl: '',
-  requiresAuth: false,
-  appBaseUrl
+/**
+ * Application client. ClaimReview calls are routed through a compatibility
+ * adapter so existing screens use the enhanced database architecture without
+ * being rewritten all at once. All other SDK resources remain unchanged.
+ */
+export const base44 = new Proxy(rawBase44, {
+  get(target, property, receiver) {
+    if (property === "entities") return entities;
+    return Reflect.get(target, property, receiver);
+  },
 });
