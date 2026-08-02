@@ -6,6 +6,12 @@ import {
   sanitizeAuditMetadata,
   validateClaimReview,
 } from "../src/lib/claimValidation.js";
+import {
+  buildAnalysisResult,
+  buildConsolidatedDocument,
+  buildSummaryUpdate,
+  containsGeneratedAnalysis,
+} from "../src/lib/analysisPersistence.js";
 
 const validClaim = {
   claim_name: "Williams v. Thompson Logistics, LLC",
@@ -42,18 +48,27 @@ assert.equal(
   "Unsupported statuses should be rejected"
 );
 
+assert.equal(
+  validateClaimReview({ readiness_score: 101 }, { partial: true }).valid,
+  false,
+  "Readiness scores outside 0-100 should be rejected"
+);
+
 assert.deepEqual(
   pickWritableClaimFields({
     claim_name: "Updated Claim",
     status: "reviewed",
+    follow_up_messages: "[]",
+    executive_summary: "Stored in ClaimAnalysis instead",
     created_by_id: "attempted-overwrite",
     admin: true,
   }),
   {
     claim_name: "Updated Claim",
     status: "reviewed",
+    follow_up_messages: "[]",
   },
-  "Server-controlled and unknown fields should not be writable"
+  "Only approved core claim fields should be writable"
 );
 
 assert.deepEqual(
@@ -79,4 +94,59 @@ assert.deepEqual(
   "History records should identify only changed values"
 );
 
-console.log("Database layer tests passed: 7 assertions completed successfully.");
+assert.equal(
+  containsGeneratedAnalysis({ executive_summary: "Generated summary" }),
+  true,
+  "Generated report content should trigger ClaimAnalysis persistence"
+);
+
+assert.equal(
+  containsGeneratedAnalysis({ status: "archived" }),
+  false,
+  "A lifecycle-only update should not create a new analysis version"
+);
+
+assert.deepEqual(
+  buildAnalysisResult({
+    executive_summary: "Generated summary",
+    readiness_categories: '[{"category":"Liability","status":"Complete"}]',
+    claim_knowledge: '{"claim_identity":{"claim_number":"CA-1"}}',
+    status: "reviewed",
+  }),
+  {
+    executive_summary: "Generated summary",
+    readiness_categories: [{ category: "Liability", status: "Complete" }],
+    claim_knowledge: { claim_identity: { claim_number: "CA-1" } },
+  },
+  "Structured report fields should be stored as structured analysis data"
+);
+
+assert.deepEqual(
+  buildSummaryUpdate({
+    status: "reviewed",
+    readiness_score: 88,
+    venue_risk_level: "High",
+    executive_summary: "Do not duplicate full report text in the core record",
+  }),
+  {
+    status: "reviewed",
+    readiness_score: 88,
+    venue_risk_level: "High",
+  },
+  "Only query-friendly analysis summaries should be mirrored to ClaimReview"
+);
+
+assert.deepEqual(
+  buildConsolidatedDocument(validClaim, validClaim),
+  {
+    name: "CA-2024-08-14732-consolidated-file.txt",
+    documentType: "Consolidated Claim File Text",
+    mimeType: "text/plain",
+    size: validClaim.claim_file_text.length,
+    text: validClaim.claim_file_text,
+    status: "processed",
+  },
+  "Claim text should be transformed into a related document record"
+);
+
+console.log("Database layer tests passed: 13 assertions completed successfully.");
