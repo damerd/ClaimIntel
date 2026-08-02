@@ -1,5 +1,11 @@
 import { rawBase44 } from "@/api/rawBase44Client";
 import {
+  buildAnalysisResult,
+  buildConsolidatedDocument,
+  buildSummaryUpdate,
+  containsGeneratedAnalysis,
+} from "@/lib/analysisPersistence";
+import {
   createClaimReview,
   getClaimReview,
   softDeleteClaimReview,
@@ -10,101 +16,34 @@ import {
   mergeReviewWithAnalysis,
   saveClaimAnalysis,
 } from "@/services/claimAnalysisRepository";
-
-const REPORT_FIELDS = Object.freeze([
-  "executive_summary",
-  "coverage_summary",
-  "coverage_issues",
-  "liability_assessment",
-  "damages_summary",
-  "medical_treatment_summary",
-  "medical_timeline",
-  "litigation_status",
-  "venue_exposure_analysis",
-  "exposure_analysis",
-  "settlement_evaluation",
-  "strengths",
-  "weaknesses",
-  "strengths_and_weaknesses",
-  "red_flags",
-  "missing_information",
-  "recommended_next_steps",
-  "suggested_follow_up_questions",
-  "overall_claim_assessment",
-  "supervisor_review",
-  "venue_risk_level",
-  "liability_allocation_summary",
-  "confidence_level",
-  "readiness_score",
-  "readiness_categories",
-  "missing_requirements",
-  "readiness_recommendation",
-  "comparative_verdict_data",
-  "claim_knowledge",
-  "validation_engine_data",
-]);
-
-const JSON_REPORT_FIELDS = new Set([
-  "readiness_categories",
-  "missing_requirements",
-  "comparative_verdict_data",
-  "claim_knowledge",
-  "validation_engine_data",
-]);
-
-const SUMMARY_FIELDS = Object.freeze([
-  "confidence_level",
-  "venue_risk_level",
-  "liability_allocation_summary",
-  "readiness_score",
-  "readiness_recommendation",
-]);
+import { saveClaimDocuments } from "@/services/claimDocumentRepository";
+import { recordAuditEvent } from "@/services/auditRepository";
 
 function owns(object, key) {
   return Object.prototype.hasOwnProperty.call(object || {}, key);
-}
-
-function parseStructuredValue(value) {
-  if (typeof value !== "string") return value;
-  if (!value.trim()) return value;
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}
-
-function containsGeneratedAnalysis(payload = {}) {
-  return REPORT_FIELDS.some((field) => owns(payload, field));
-}
-
-function buildAnalysisResult(payload = {}) {
-  return REPORT_FIELDS.reduce((result, field) => {
-    if (!owns(payload, field)) return result;
-    result[field] = JSON_REPORT_FIELDS.has(field)
-      ? parseStructuredValue(payload[field])
-      : payload[field];
-    return result;
-  }, {});
-}
-
-function buildSummaryUpdate(payload = {}) {
-  const update = {
-    status: payload.status || "reviewed",
-  };
-
-  for (const field of SUMMARY_FIELDS) {
-    if (owns(payload, field)) update[field] = payload[field];
-  }
-
-  return update;
 }
 
 async function hydrateReview(review) {
   if (!review || review.record_status === "deleted") return null;
   const analysis = await getLatestClaimAnalysis(review.id);
   return mergeReviewWithAnalysis(review, analysis);
+}
+
+async function persistConsolidatedClaimDocument(review, payload) {
+  const document = buildConsolidatedDocument(payload, review);
+  if (!document) return [];
+
+  try {
+    return await saveClaimDocuments(review.id, [document]);
+  } catch (error) {
+    await recordAuditEvent("claim_document_save_failed", {
+      success: false,
+      relatedClaimId: review.id,
+      errorCode: error?.name || "DOCUMENT_SAVE_ERROR",
+      metadata: { document_type: document.documentType },
+    });
+    return [];
+  }
 }
 
 /**
@@ -117,7 +56,9 @@ async function hydrateReview(review) {
  */
 export const claimReviewEntityAdapter = {
   async create(payload) {
-    return createClaimReview(payload);
+    const review = await createClaimReview(payload);
+    await persistConsolidatedClaimDocument(review, payload);
+    return review;
   },
 
   async update(id, payload = {}) {
