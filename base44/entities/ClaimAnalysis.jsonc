@@ -1,0 +1,85 @@
+{
+  "name": "ClaimAnalysis",
+  "type": "object",
+  "title": "Claim Analysis",
+  "description": "Versioned AI-generated analysis associated with a ClaimReview record.",
+  "properties": {
+    "claim_review_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Parent ClaimReview record identifier"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 1,
+      "description": "Analysis version number for the parent claim"
+    },
+    "analysis_status": {
+      "type": "string",
+      "enum": ["generating", "completed", "failed"],
+      "default": "generating"
+    },
+    "selected_sections": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "analysis_payload": {
+      "type": "string",
+      "description": "JSON-serialized report sections and structured intelligence results"
+    },
+    "confidence_level": {
+      "type": "string",
+      "enum": ["High", "Medium", "Low", "Unknown"],
+      "default": "Unknown"
+    },
+    "venue_risk_level": {
+      "type": "string",
+      "enum": ["Low", "Moderate", "High", "Severe", "Unknown"],
+      "default": "Unknown"
+    },
+    "liability_allocation_summary": {
+      "type": "string"
+    },
+    "readiness_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "model_name": {
+      "type": "string",
+      "description": "Model or integration used to generate the analysis"
+    },
+    "failure_message": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Sanitized error message when generation fails"
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["claim_review_id", "version", "analysis_status"],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "delete": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    }
+  }
+}
