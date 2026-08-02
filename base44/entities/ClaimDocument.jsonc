@@ -1,0 +1,78 @@
+{
+  "name": "ClaimDocument",
+  "type": "object",
+  "title": "Claim Document",
+  "description": "Document metadata and extracted content associated with a ClaimReview record.",
+  "properties": {
+    "claim_review_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Parent ClaimReview record identifier"
+    },
+    "file_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "document_type": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "mime_type": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "file_size_bytes": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "storage_uri": {
+      "type": "string",
+      "description": "Platform storage reference rather than raw file content"
+    },
+    "content_hash": {
+      "type": "string",
+      "maxLength": 128,
+      "description": "Hash used to identify duplicate document content"
+    },
+    "extracted_text": {
+      "type": "string",
+      "description": "Text extracted from the uploaded claim document"
+    },
+    "processing_status": {
+      "type": "string",
+      "enum": ["uploaded", "processing", "processed", "failed"],
+      "default": "uploaded"
+    },
+    "failure_message": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "uploaded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["claim_review_id", "file_name", "processing_status"],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "delete": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    }
+  }
+}
