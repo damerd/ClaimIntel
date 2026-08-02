@@ -1,6 +1,5 @@
-import { base44 } from "@/api/base44Client";
+import { rawBase44 } from "@/api/rawBase44Client";
 import { recordAuditEvent } from "@/services/auditRepository";
-import { appendClaimHistory } from "@/services/claimHistoryRepository";
 
 const ANALYSIS_SUMMARY_FIELDS = [
   "confidence_level",
@@ -28,7 +27,7 @@ function buildAnalysisRecord(claimReviewId, result, selectedSections, version) {
 }
 
 export async function getLatestClaimAnalysis(claimReviewId) {
-  const records = await base44.entities.ClaimAnalysis.filter(
+  const records = await rawBase44.entities.ClaimAnalysis.filter(
     { claim_review_id: claimReviewId },
     "-version",
     1
@@ -43,22 +42,9 @@ export async function saveClaimAnalysis({
 }) {
   const latest = await getLatestClaimAnalysis(claimReview.id);
   const nextVersion = (latest?.version || 0) + 1;
-  const analysis = await base44.entities.ClaimAnalysis.create(
+  const analysis = await rawBase44.entities.ClaimAnalysis.create(
     buildAnalysisRecord(claimReview.id, result, selectedSections, nextVersion)
   );
-
-  await appendClaimHistory({
-    claimReviewId: claimReview.id,
-    version: (claimReview.version || 1) + 1,
-    eventType: "analysis_saved",
-    before: claimReview,
-    after: {
-      ...claimReview,
-      status: "reviewed",
-      version: (claimReview.version || 1) + 1,
-    },
-    changeSummary: `Saved analysis version ${nextVersion}`,
-  });
 
   await recordAuditEvent("claim_analysis_saved", {
     relatedClaimId: claimReview.id,
@@ -81,7 +67,7 @@ export async function saveFailedClaimAnalysis({
   const nextVersion = (latest?.version || 0) + 1;
   const failureMessage = String(error?.message || "Analysis failed").slice(0, 1000);
 
-  const analysis = await base44.entities.ClaimAnalysis.create({
+  const analysis = await rawBase44.entities.ClaimAnalysis.create({
     claim_review_id: claimReviewId,
     version: nextVersion,
     analysis_status: "failed",
