@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { rawBase44 } from "@/api/rawBase44Client";
 import {
   assertValidClaimReview,
   normalizeClaimNumber,
@@ -27,7 +27,7 @@ function activeRecordClause() {
 async function findDuplicateClaimNumber(normalizedClaimNumber, excludeId = null) {
   if (!normalizedClaimNumber) return null;
 
-  const matches = await base44.entities.ClaimReview.filter(
+  const matches = await rawBase44.entities.ClaimReview.filter(
     {
       normalized_claim_number: normalizedClaimNumber,
       ...activeRecordClause(),
@@ -61,7 +61,7 @@ export async function createClaimReview(input) {
   }
 
   try {
-    const created = await base44.entities.ClaimReview.create(payload);
+    const created = await rawBase44.entities.ClaimReview.create(payload);
 
     await appendClaimHistory({
       claimReviewId: created.id,
@@ -96,9 +96,10 @@ export async function createClaimReview(input) {
 }
 
 export async function getClaimReview(id, { includeDeleted = false } = {}) {
-  const review = await base44.entities.ClaimReview.get(id);
+  const records = await rawBase44.entities.ClaimReview.filter({ id }, "-created_date", 1);
+  const review = records[0] || null;
   if (!includeDeleted && review?.record_status === "deleted") return null;
-  return review || null;
+  return review;
 }
 
 export async function listClaimReviews({
@@ -137,7 +138,7 @@ export async function listClaimReviews({
       ? clauses[0]
       : { $and: clauses };
 
-  return base44.entities.ClaimReview.filter(query, sort, limit, skip);
+  return rawBase44.entities.ClaimReview.filter(query, sort, limit, skip);
 }
 
 export async function updateClaimReview(id, updates, changeSummary = "Updated claim review") {
@@ -162,7 +163,7 @@ export async function updateClaimReview(id, updates, changeSummary = "Updated cl
   }
 
   const nextVersion = (current.version || 1) + 1;
-  const updated = await base44.entities.ClaimReview.update(id, {
+  const updated = await rawBase44.entities.ClaimReview.update(id, {
     ...writable,
     version: nextVersion,
     last_activity_at: new Date().toISOString(),
@@ -198,7 +199,7 @@ export async function softDeleteClaimReview(id, reason = "Deleted by user") {
   if (current.record_status === "deleted") return current;
 
   const nextVersion = (current.version || 1) + 1;
-  const updated = await base44.entities.ClaimReview.update(id, {
+  const updated = await rawBase44.entities.ClaimReview.update(id, {
     record_status: "deleted",
     deleted_at: new Date().toISOString(),
     deletion_reason: String(reason).slice(0, 500),
@@ -229,7 +230,7 @@ export async function restoreClaimReview(id) {
   if (current.record_status !== "deleted") return current;
 
   const nextVersion = (current.version || 1) + 1;
-  const updated = await base44.entities.ClaimReview.update(id, {
+  const updated = await rawBase44.entities.ClaimReview.update(id, {
     record_status: "active",
     deleted_at: "",
     deletion_reason: "",
