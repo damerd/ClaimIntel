@@ -1,0 +1,59 @@
+{
+  "name": "ClaimReviewHistory",
+  "type": "object",
+  "title": "Claim Review History",
+  "description": "Append-only history records for significant changes to a ClaimReview.",
+  "properties": {
+    "claim_review_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "event_type": {
+      "type": "string",
+      "enum": ["created", "updated", "status_changed", "analysis_saved", "soft_deleted", "restored"]
+    },
+    "changed_fields": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "before_snapshot": {
+      "type": "string",
+      "description": "Sanitized JSON snapshot of tracked values before the change"
+    },
+    "after_snapshot": {
+      "type": "string",
+      "description": "Sanitized JSON snapshot of tracked values after the change"
+    },
+    "change_summary": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "actor_email": {
+      "type": "string"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": ["claim_review_id", "version", "event_type", "occurred_at"],
+  "rls": {
+    "create": null,
+    "read": {
+      "$or": [
+        { "created_by_id": "{{user.id}}" },
+        { "user_condition": { "role": "admin" } }
+      ]
+    },
+    "update": {
+      "user_condition": { "role": "admin" }
+    },
+    "delete": {
+      "user_condition": { "role": "admin" }
+    }
+  }
+}
