@@ -1,4 +1,4 @@
-import { base44 } from "@/api/base44Client";
+import { rawBase44 } from "@/api/rawBase44Client";
 import { recordAuditEvent } from "@/services/auditRepository";
 
 function toDocumentRecord(claimReviewId, document) {
@@ -24,7 +24,7 @@ export async function saveClaimDocuments(claimReviewId, documents = []) {
 
   if (records.length === 0) return [];
 
-  const created = await base44.entities.ClaimDocument.bulkCreate(records);
+  const created = await rawBase44.entities.ClaimDocument.bulkCreate(records);
   await recordAuditEvent("claim_documents_saved", {
     relatedClaimId: claimReviewId,
     metadata: {
@@ -37,7 +37,7 @@ export async function saveClaimDocuments(claimReviewId, documents = []) {
 }
 
 export function listClaimDocuments(claimReviewId, limit = 100) {
-  return base44.entities.ClaimDocument.filter(
+  return rawBase44.entities.ClaimDocument.filter(
     { claim_review_id: claimReviewId },
     "created_date",
     limit
